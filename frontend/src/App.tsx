@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Upload from './pages/Upload'
+import TestAuth from './pages/TestAuth'
 import DebugInfo from './components/DebugInfo'
 import './App.css'
 
@@ -20,6 +21,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/upload" element={<Upload />} />
+              <Route path="/test" element={<TestAuth />} />
             </Routes>
           </main>
           <DebugInfo />
