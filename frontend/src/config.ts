@@ -19,4 +19,9 @@ export const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
 
 // Домен для Telegram Apps
 export const APP_DOMAIN = import.meta.env.VITE_APP_DOMAIN || 
-  (environment === 'production' ? 'https://azkaraz.github.io' : window.location.origin) 
+  (environment === 'production' ? 'https://azkaraz.github.io' : window.location.origin)
+
+// URL для Telegram авторизации
+export const TELEGRAM_AUTH_URL = environment === 'production' 
+  ? 'https://azkaraz.github.io/adstat' 
+  : 'http://localhost:3000' 
