@@ -42,7 +42,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
+          console.log('Attempting to get profile with token:', token)
           const userData = await authService.getProfile(token)
+          console.log('Profile loaded successfully:', userData)
           setUser(userData)
         } catch (error) {
           console.error('Ошибка получения профиля:', error)
@@ -58,17 +60,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (telegramData: any) => {
     try {
+      console.log('Starting login with telegram data:', telegramData)
+      setLoading(true)
+      
       const response = await authService.telegramAuth(telegramData)
+      console.log('Login successful:', response)
+      
       setToken(response.access_token)
       setUser(response.user)
       localStorage.setItem('token', response.access_token)
+      
+      console.log('User logged in successfully:', response.user)
     } catch (error) {
       console.error('Ошибка авторизации:', error)
+      setLoading(false)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const logout = () => {
+    console.log('Logging out user')
     setUser(null)
     setToken(null)
     localStorage.removeItem('token')

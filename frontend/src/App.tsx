@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Upload from './pages/Upload'
+import DebugInfo from './components/DebugInfo'
 import './App.css'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
               <Route path="/upload" element={<Upload />} />
             </Routes>
           </main>
+          <DebugInfo />
         </div>
       </Router>
     </AuthProvider>

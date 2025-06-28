@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 declare global {
@@ -27,20 +27,38 @@ declare global {
 const Login: React.FC = () => {
   const { user, login, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  useEffect(() => {
-    if (user) {
-      navigate('/')
-      return
+  // Функция для извлечения параметров из URL
+  const getUrlParams = () => {
+    const urlParams = new URLSearchParams(location.search)
+    const params: any = {}
+    
+    // Telegram передает данные через параметры
+    if (urlParams.get('user')) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'))
+        params.user = userData
+      } catch (e) {
+        console.error('Error parsing user data:', e)
+      }
     }
+    
+    // Другие параметры Telegram
+    params.auth_date = urlParams.get('auth_date')
+    params.hash = urlParams.get('hash')
+    params.query_id = urlParams.get('query_id')
+    
+    return params
+  }
 
-    // Проверяем, запущено ли приложение в Telegram
+  // Функция для авторизации через Telegram WebApp
+  const handleTelegramWebAppAuth = () => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp
       tg.ready()
       tg.expand()
 
-      // Если есть данные пользователя, авторизуемся
       if (tg.initDataUnsafe?.user) {
         const telegramData = {
           ...tg.initDataUnsafe.user,
@@ -48,10 +66,61 @@ const Login: React.FC = () => {
           hash: tg.initData
         }
         
-        login(telegramData).catch(console.error)
+        console.log('Telegram WebApp auth data:', telegramData)
+        return login(telegramData)
       }
     }
-  }, [user, login, navigate])
+    return Promise.reject('No Telegram WebApp data')
+  }
+
+  // Функция для авторизации через URL параметры
+  const handleUrlParamsAuth = () => {
+    const params = getUrlParams()
+    
+    if (params.user && params.user.id) {
+      const telegramData = {
+        id: params.user.id,
+        first_name: params.user.first_name || '',
+        last_name: params.user.last_name || '',
+        username: params.user.username || '',
+        photo_url: params.user.photo_url || '',
+        auth_date: params.auth_date || Math.floor(Date.now() / 1000),
+        hash: params.hash || 'url_auth'
+      }
+      
+      console.log('URL params auth data:', telegramData)
+      return login(telegramData)
+    }
+    
+    return Promise.reject('No valid URL parameters')
+  }
+
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+      return
+    }
+
+    // Пытаемся авторизоваться автоматически
+    const autoAuth = async () => {
+      try {
+        // Сначала пробуем Telegram WebApp
+        await handleTelegramWebAppAuth()
+      } catch (error) {
+        console.log('Telegram WebApp auth failed, trying URL params...')
+        
+        try {
+          // Затем пробуем URL параметры
+          await handleUrlParamsAuth()
+        } catch (urlError) {
+          console.log('URL params auth failed:', urlError)
+          // Если ничего не работает, показываем кнопку для ручной авторизации
+        }
+      }
+    }
+
+    autoAuth()
+  }, [user, login, navigate, location])
 
   const handleTelegramLogin = () => {
     // Для тестирования вне Telegram
