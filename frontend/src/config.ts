@@ -4,7 +4,7 @@ const config = {
     apiBaseUrl: 'http://localhost:8000',
   },
   production: {
-    apiBaseUrl: process.env.VITE_API_BASE_URL || 'https://your-backend-domain.com',
+    apiBaseUrl: 'https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app', // ngrok URL для тестирования
   },
   staging: {
     apiBaseUrl: process.env.VITE_API_BASE_URL || 'https://your-staging-backend.com',
@@ -24,4 +24,8 @@ export const APP_DOMAIN = import.meta.env.VITE_APP_DOMAIN ||
 // URL для Telegram авторизации
 export const TELEGRAM_AUTH_URL = environment === 'production' 
   ? 'https://azkaraz.github.io/adstat' 
-  : 'http://localhost:3000' 
+  : 'http://localhost:3000'
+
+console.log('Environment:', environment)
+console.log('API Base URL:', API_BASE_URL)
+console.log('App Domain:', APP_DOMAIN) 
