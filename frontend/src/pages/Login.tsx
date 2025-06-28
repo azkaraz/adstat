@@ -54,10 +54,15 @@ const Login: React.FC = () => {
 
   // Функция для авторизации через Telegram WebApp
   const handleTelegramWebAppAuth = () => {
+    console.log('Checking Telegram WebApp...')
     if (window.Telegram?.WebApp) {
+      console.log('Telegram WebApp found!')
       const tg = window.Telegram.WebApp
       tg.ready()
       tg.expand()
+
+      console.log('initDataUnsafe:', tg.initDataUnsafe)
+      console.log('initData:', tg.initData)
 
       if (tg.initDataUnsafe?.user) {
         const telegramData = {
@@ -68,14 +73,20 @@ const Login: React.FC = () => {
         
         console.log('Telegram WebApp auth data:', telegramData)
         return login(telegramData)
+      } else {
+        console.log('No user data in Telegram WebApp')
       }
+    } else {
+      console.log('Telegram WebApp not found')
     }
     return Promise.reject('No Telegram WebApp data')
   }
 
   // Функция для авторизации через URL параметры
   const handleUrlParamsAuth = () => {
+    console.log('Checking URL parameters...')
     const params = getUrlParams()
+    console.log('URL params:', params)
     
     if (params.user && params.user.id) {
       const telegramData = {
@@ -92,29 +103,38 @@ const Login: React.FC = () => {
       return login(telegramData)
     }
     
+    console.log('No valid URL parameters found')
     return Promise.reject('No valid URL parameters')
   }
 
   useEffect(() => {
+    console.log('Login component mounted')
+    console.log('Current URL:', window.location.href)
+    console.log('User state:', user)
+    
     if (user) {
+      console.log('User already logged in, redirecting...')
       navigate('/')
       return
     }
 
     // Пытаемся авторизоваться автоматически
     const autoAuth = async () => {
+      console.log('Starting automatic auth...')
       try {
         // Сначала пробуем Telegram WebApp
+        console.log('Trying Telegram WebApp auth...')
         await handleTelegramWebAppAuth()
       } catch (error) {
-        console.log('Telegram WebApp auth failed, trying URL params...')
+        console.log('Telegram WebApp auth failed:', error)
         
         try {
           // Затем пробуем URL параметры
+          console.log('Trying URL params auth...')
           await handleUrlParamsAuth()
         } catch (urlError) {
           console.log('URL params auth failed:', urlError)
-          // Если ничего не работает, показываем кнопку для ручной авторизации
+          console.log('No automatic auth methods worked, showing manual login button')
         }
       }
     }
@@ -123,6 +143,7 @@ const Login: React.FC = () => {
   }, [user, login, navigate, location])
 
   const handleTelegramLogin = () => {
+    console.log('Manual Telegram login clicked')
     // Для тестирования вне Telegram
     const mockData = {
       id: 123456789,
@@ -133,6 +154,7 @@ const Login: React.FC = () => {
       hash: "mock_hash"
     }
     
+    console.log('Using mock data for testing:', mockData)
     login(mockData).catch(console.error)
   }
 
