@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
@@ -10,6 +11,24 @@ import DebugInfo from './components/DebugInfo'
 import './App.css'
 
 function App() {
+  // Инициализация Telegram WebApp
+  React.useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      console.log('Initializing Telegram WebApp...')
+      const tg = window.Telegram.WebApp
+      
+      // Инициализируем WebApp
+      tg.ready()
+      tg.expand()
+      
+      console.log('Telegram WebApp initialized')
+      console.log('initDataUnsafe:', tg.initDataUnsafe)
+      console.log('initData:', tg.initData)
+    } else {
+      console.log('Telegram WebApp not available')
+    }
+  }, [])
+
   return (
     <AuthProvider>
       <Router>

@@ -2,28 +2,6 @@ import React, { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-declare global {
-  interface Window {
-    Telegram: {
-      WebApp: {
-        initData: string
-        initDataUnsafe: {
-          user: {
-            id: number
-            first_name: string
-            last_name?: string
-            username?: string
-            photo_url?: string
-          }
-        }
-        ready: () => void
-        expand: () => void
-        close: () => void
-      }
-    }
-  }
-}
-
 const Login: React.FC = () => {
   const { user, login, loading } = useAuth()
   const navigate = useNavigate()
@@ -198,8 +176,8 @@ const Login: React.FC = () => {
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-gray-500">
-              Приложение автоматически авторизуется при запуске из Telegram
+            <p className="text-sm text-gray-600">
+              Если у вас возникли проблемы с авторизацией, обратитесь к администратору
             </p>
           </div>
         </div>
