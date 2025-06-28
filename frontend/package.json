@@ -1,0 +1,51 @@
+{
+  "name": "ads-stat-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Ads Statistics Dashboard",
+  "type": "module",
+  "main": "index.js",
+  "homepage": "https://azkaraz.github.io/adstat",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.1",
+    "axios": "^1.6.2",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.1.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "react-dropzone": "^14.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/user-event": "^14.5.1",
+    "vitest": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
+    "jsdom": "^23.0.1",
+    "@vitest/coverage-v8": "^1.0.4",
+    "msw": "^2.0.11",
+    "gh-pages": "^6.1.0"
+  }
+} 
