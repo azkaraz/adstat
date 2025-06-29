@@ -68,6 +68,18 @@ async def health_check():
     """Проверка здоровья приложения"""
     return {"status": "healthy", "message": "Ads Statistics Dashboard is running"}
 
+@app.get("/cors-test")
+async def cors_test(request: Request):
+    """Тест CORS для диагностики"""
+    print(f"DEBUG: CORS test endpoint called from origin: {request.headers.get('origin')}")
+    return {
+        "message": "CORS test successful",
+        "origin": request.headers.get('origin'),
+        "user_agent": request.headers.get('user-agent'),
+        "method": request.method,
+        "url": str(request.url)
+    }
+
 @app.get("/webapp-info")
 async def webapp_info():
     """Информация о WebApp для отладки"""

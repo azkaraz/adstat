@@ -1,70 +1,105 @@
-import React from 'react'
-import { useLocation } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 // Debug component updated: 2024-06-29 11:40
 const DebugInfo: React.FC = () => {
-  const location = useLocation()
-  
-  // Получаем URL параметры
-  const urlParams = new URLSearchParams(location.search)
-  const params: any = {}
-  
-  for (const [key, value] of urlParams.entries()) {
-    params[key] = value
-  }
-  
-  // Проверяем Telegram WebApp
-  const hasTelegramWebApp = !!window.Telegram?.WebApp
-  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user
-  const telegramInitData = window.Telegram?.WebApp?.initData
+  const { user, token } = useAuth()
+  const [telegramData, setTelegramData] = useState<any>(null)
+  const [logs, setLogs] = useState<string[]>([])
 
-  // Дополнительная диагностика
-  const userAgent = navigator.userAgent
-  const isTelegramWebView = userAgent.includes('TelegramWebApp') || userAgent.includes('Telegram')
+  useEffect(() => {
+    // Перехватываем console.log для отображения в UI
+    const originalLog = console.log
+    const originalError = console.error
+    
+    console.log = (...args) => {
+      originalLog.apply(console, args)
+      setLogs(prev => [...prev, `LOG: ${args.join(' ')}`])
+    }
+    
+    console.error = (...args) => {
+      originalError.apply(console, args)
+      setLogs(prev => [...prev, `ERROR: ${args.join(' ')}`])
+    }
+
+    // Получаем данные Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp
+      setTelegramData({
+        initData: tg.initData,
+        initDataUnsafe: tg.initDataUnsafe,
+        platform: tg.platform,
+        version: tg.version,
+        isExpanded: tg.isExpanded,
+        viewportHeight: tg.viewportHeight,
+        colorScheme: tg.colorScheme
+      })
+    }
+
+    return () => {
+      console.log = originalLog
+      console.error = originalError
+    }
+  }, [])
+
+  const clearLogs = () => {
+    setLogs([])
+  }
+
+  const copyLogs = () => {
+    navigator.clipboard.writeText(logs.join('\n'))
+    alert('Логи скопированы в буфер обмена!')
+  }
 
   return (
-    <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-4 rounded-lg text-xs max-w-sm">
-      <h3 className="font-bold mb-2">Debug Info</h3>
-      
-      <div className="mb-2">
-        <strong>URL Params:</strong>
-        <pre className="text-xs overflow-auto">
-          {JSON.stringify(params, null, 2)}
-        </pre>
-      </div>
-      
-      <div className="mb-2">
-        <strong>Telegram WebApp:</strong> {hasTelegramWebApp ? 'Yes' : 'No'}
-      </div>
-      
-      <div className="mb-2">
-        <strong>User Agent:</strong>
-        <div className="text-xs break-all">{userAgent}</div>
-      </div>
-      
-      <div className="mb-2">
-        <strong>Is Telegram WebView:</strong> {isTelegramWebView ? 'Yes' : 'No'}
-      </div>
-      
-      {telegramUser && (
-        <div className="mb-2">
-          <strong>Telegram User:</strong>
-          <pre className="text-xs overflow-auto">
-            {JSON.stringify(telegramUser, null, 2)}
-          </pre>
+    <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-md max-h-96 overflow-auto">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-semibold">Debug Info</h3>
+        <div className="space-x-2">
+          <button 
+            onClick={clearLogs}
+            className="text-xs bg-gray-200 px-2 py-1 rounded"
+          >
+            Очистить
+          </button>
+          <button 
+            onClick={copyLogs}
+            className="text-xs bg-blue-200 px-2 py-1 rounded"
+          >
+            Копировать
+          </button>
         </div>
-      )}
+      </div>
       
-      {telegramInitData && (
-        <div className="mb-2">
-          <strong>Init Data:</strong>
-          <div className="text-xs break-all">{telegramInitData}</div>
+      <div className="text-xs space-y-1">
+        <div><strong>URL Params:</strong> {JSON.stringify(new URLSearchParams(window.location.search))}</div>
+        <div><strong>Telegram WebApp:</strong> {window.Telegram?.WebApp ? 'Yes' : 'No'}</div>
+        <div><strong>Current URL:</strong> {window.location.pathname}</div>
+        <div><strong>User:</strong> {user ? 'Logged in' : 'Not logged in'}</div>
+        <div><strong>Token:</strong> {token ? 'Present' : 'Missing'}</div>
+        
+        {telegramData && (
+          <div className="mt-2">
+            <strong>Telegram Data:</strong>
+            <div className="bg-gray-100 p-2 rounded text-xs">
+              <div>Platform: {telegramData.platform}</div>
+              <div>Version: {telegramData.version}</div>
+              <div>User: {telegramData.initDataUnsafe?.user ? 'Yes' : 'No'}</div>
+              <div>Init Data: {telegramData.initData ? 'Present' : 'Missing'}</div>
+            </div>
+          </div>
+        )}
+        
+        <div className="mt-2">
+          <strong>Recent Logs:</strong>
+          <div className="bg-gray-100 p-2 rounded text-xs max-h-32 overflow-auto">
+            {logs.slice(-10).map((log, index) => (
+              <div key={index} className="mb-1">
+                {log}
+              </div>
+            ))}
+          </div>
         </div>
-      )}
-      
-      <div>
-        <strong>Current URL:</strong>
-        <div className="text-xs break-all">{location.pathname + location.search}</div>
       </div>
     </div>
   )
