@@ -14,8 +14,33 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  console.log('DEBUG: Axios request:', {
+    url: config.url,
+    method: config.method,
+    data: config.data,
+    headers: config.headers
+  })
   return config
 })
+
+// Интерцептор для логирования ответов
+api.interceptors.response.use(
+  (response) => {
+    console.log('DEBUG: Axios response:', {
+      status: response.status,
+      data: response.data
+    })
+    return response
+  },
+  (error) => {
+    console.error('DEBUG: Axios error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+    return Promise.reject(error)
+  }
+)
 
 export interface TelegramAuthData {
   id: number

@@ -71,10 +71,16 @@ async def health_check():
 @app.get("/webapp-info")
 async def webapp_info():
     """Информация о WebApp для отладки"""
+    print("DEBUG: webapp-info endpoint called")
     return {
         "webapp_url": "https://azkaraz.github.io/adstat",
         "bot_token_configured": bool(settings.TELEGRAM_BOT_TOKEN),
-        "cors_configured": True
+        "cors_configured": True,
+        "debug_info": {
+            "telegram_bot_token": bool(settings.TELEGRAM_BOT_TOKEN),
+            "secret_key_configured": bool(settings.SECRET_KEY),
+            "database_url": settings.DATABASE_URL
+        }
     }
 
 if __name__ == "__main__":
