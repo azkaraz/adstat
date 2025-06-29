@@ -28,12 +28,10 @@ const mockUser = {
 
 const mockToken = 'mock-token'
 
-const MockAuthProvider = ({ children }: { children: React.ReactNode }) => (
-  <div data-testid="auth-provider">{children}</div>
-)
-
 vi.mock('../../contexts/AuthContext', () => ({
-  AuthProvider: MockAuthProvider,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="auth-provider">{children}</div>
+  ),
   useAuth: () => ({
     user: mockUser,
     token: mockToken,
