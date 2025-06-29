@@ -22,6 +22,41 @@ const TelegramAuthInitializer = () => {
       console.log('🔍 TelegramAuthInitializer: window.Telegram =', window.Telegram)
       console.log('🔍 TelegramAuthInitializer: window.Telegram?.WebApp =', window.Telegram?.WebApp)
       
+      // Если Telegram WebApp недоступен, но есть данные в URL, создаем его
+      if (!window.Telegram?.WebApp && window.location.hash.includes('tgWebAppData')) {
+        console.log('🔧 TelegramAuthInitializer: Создаем Telegram WebApp из URL данных')
+        
+        const urlData = new URLSearchParams(window.location.hash.substring(1))
+        const tgWebAppData = urlData.get('tgWebAppData')
+        
+        if (tgWebAppData) {
+          try {
+            const decoded = decodeURIComponent(tgWebAppData)
+            const params = new URLSearchParams(decoded)
+            
+            const userStr = params.get('user')
+            const user = userStr ? JSON.parse(userStr) : null
+            
+            window.Telegram = {
+              WebApp: {
+                initData: decoded,
+                initDataUnsafe: {
+                  user: user
+                },
+                platform: urlData.get('tgWebAppPlatform') || '',
+                version: urlData.get('tgWebAppVersion') || '',
+                ready: () => console.log('✅ Telegram WebApp ready'),
+                expand: () => console.log('✅ Telegram WebApp expanded')
+              }
+            }
+            
+            console.log('✅ TelegramAuthInitializer: Telegram WebApp создан из URL:', window.Telegram.WebApp)
+          } catch (error) {
+            console.error('❌ TelegramAuthInitializer: Ошибка создания Telegram WebApp:', error)
+          }
+        }
+      }
+      
       if (window.Telegram?.WebApp && !user && !loading) {
         console.log('✅ TelegramAuthInitializer: Telegram WebApp доступен')
         const tg = window.Telegram.WebApp
