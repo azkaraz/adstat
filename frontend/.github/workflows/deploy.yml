@@ -35,6 +35,12 @@ jobs:
         cd frontend
         npm ci
         
+    # Временно отключаем тесты
+    # - name: Run tests
+    #   run: |
+    #     cd frontend
+    #     npm test
+        
     - name: Build
       run: |
         cd frontend
