@@ -148,7 +148,7 @@ jobs:
         safety check --json --output safety-report.json || true
     
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: |
@@ -209,5 +209,5 @@ jobs:
     - name: Notify on failure
       if: failure()
       run: |
-        echo "Some tests failed. Check the workflow for details."
-        # Здесь можно добавить уведомления в Slack, Telegram или email 
+        echo "Some tests failed!"
+        exit 1 

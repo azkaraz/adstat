@@ -1,9 +1,8 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
-import { vi } from 'vitest'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
 import Dashboard from '../../pages/Dashboard'
-import { AuthProvider } from '../../contexts/AuthContext'
 
 // Мокаем fetch
 global.fetch = vi.fn()
@@ -18,39 +17,42 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
+// Мокаем AuthContext
+const mockUser = {
+  id: 1,
+  first_name: 'Test',
+  last_name: 'User',
+  username: 'testuser',
+  has_google_sheet: false
+}
+
+const mockToken = 'mock-token'
+
+const MockAuthProvider = ({ children }: { children: React.ReactNode }) => (
+  <div data-testid="auth-provider">{children}</div>
+)
+
+vi.mock('../../contexts/AuthContext', () => ({
+  AuthProvider: MockAuthProvider,
+  useAuth: () => ({
+    user: mockUser,
+    token: mockToken,
+    login: vi.fn(),
+    logout: vi.fn()
+  })
+}))
+
 describe('Dashboard Component', () => {
-  const mockUser = {
-    id: 1,
-    first_name: 'Test',
-    last_name: 'User',
-    username: 'testuser',
-    has_google_sheet: false
-  }
-
-  const mockToken = 'mock-token'
-
   const renderDashboard = () => {
     return render(
       <BrowserRouter>
-        <AuthProvider>
-          <Dashboard />
-        </AuthProvider>
+        <Dashboard />
       </BrowserRouter>
     )
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
-    
-    // Мокаем AuthContext
-    vi.mock('../../contexts/AuthContext', () => ({
-      useAuth: () => ({
-        user: mockUser,
-        token: mockToken,
-        login: vi.fn(),
-        logout: vi.fn()
-      })
-    }))
   })
 
   it('отображает приветствие пользователя', () => {
