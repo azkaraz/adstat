@@ -1,8 +1,8 @@
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 
-// Базовый URL API
-const API_BASE_URL = 'http://localhost:8000'
+// Базовый URL API - используем ngrok URL как в приложении
+const API_BASE_URL = 'https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app'
 
 // Моки для API эндпоинтов
 export const handlers = [
@@ -84,20 +84,16 @@ export const handlers = [
       {
         id: 1,
         filename: 'test_report.xlsx',
-        original_filename: 'test_report.xlsx',
         file_size: 1024,
         status: 'completed',
-        created_at: '2023-12-01T10:00:00Z',
-        updated_at: '2023-12-01T10:05:00Z'
+        created_at: '2023-12-01T10:00:00Z'
       },
       {
         id: 2,
         filename: 'another_report.xlsx',
-        original_filename: 'another_report.xlsx',
         file_size: 2048,
         status: 'processing',
-        created_at: '2023-12-01T11:00:00Z',
-        updated_at: '2023-12-01T11:00:00Z'
+        created_at: '2023-12-01T11:00:00Z'
       }
     ])
   }),
@@ -137,11 +133,9 @@ export const handlers = [
     return HttpResponse.json({
       id: parseInt(id as string),
       filename: 'test_report.xlsx',
-      original_filename: 'test_report.xlsx',
       file_size: 1024,
       status: 'completed',
-      created_at: '2023-12-01T10:00:00Z',
-      updated_at: '2023-12-01T10:05:00Z'
+      created_at: '2023-12-01T10:00:00Z'
     })
   }),
 
@@ -212,20 +206,51 @@ export const handlers = [
     })
   }),
 
-  // Получение URL для Google авторизации
-  http.post(`${API_BASE_URL}/auth/google/url`, () => {
+  // Получение данных отчета
+  http.get(`${API_BASE_URL}/sheets/report/:id`, ({ request, params }) => {
+    const authHeader = request.headers.get('Authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { detail: 'Не авторизован' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = params
+
     return HttpResponse.json({
-      auth_url: 'https://accounts.google.com/oauth2/auth?client_id=test&redirect_uri=test'
+      report_id: parseInt(id as string),
+      data: [
+        {
+          date: '2023-12-01',
+          campaign: 'Test Campaign',
+          impressions: 1000,
+          clicks: 50,
+          spend: 100.50,
+          conversions: 5
+        }
+      ]
     })
   }),
 
-  // Callback от Google
-  http.post(`${API_BASE_URL}/auth/google/callback`, () => {
+  // Запись данных в Google таблицу
+  http.post(`${API_BASE_URL}/sheets/write`, ({ request }) => {
+    const authHeader = request.headers.get('Authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { detail: 'Не авторизован' },
+        { status: 401 }
+      )
+    }
+
     return HttpResponse.json({
-      message: 'Google авторизация успешна'
+      message: 'Данные успешно записаны в Google таблицу',
+      rows_written: 10
     })
   })
 ]
 
-// Создаем сервер для тестов
+// Создаем и экспортируем сервер
 export const server = setupServer(...handlers) 
