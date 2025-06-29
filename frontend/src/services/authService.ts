@@ -79,16 +79,28 @@ export interface UserProfile {
 
 export const authService = {
   async telegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
-    const response = await api.post('/auth/telegram', data)
-    return response.data
+    console.log('🔍 authService.telegramAuth: Начинаем авторизацию')
+    console.log('📤 authService.telegramAuth: Отправляем данные:', data)
+    console.log('🌐 authService.telegramAuth: URL:', `${API_BASE_URL}/auth/telegram`)
+    
+    try {
+      const response = await api.post('/auth/telegram', data)
+      console.log('✅ authService.telegramAuth: Ответ получен:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('❌ authService.telegramAuth: Ошибка:', error)
+      throw error
+    }
   },
 
   async getProfile(token: string): Promise<UserProfile> {
+    console.log('🔍 authService.getProfile: Получаем профиль')
     const response = await api.get('/user/profile', {
       headers: {
         Authorization: `Bearer ${token}`
       }
     })
+    console.log('✅ authService.getProfile: Профиль получен:', response.data)
     return response.data
   },
 
