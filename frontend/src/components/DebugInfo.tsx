@@ -1,6 +1,7 @@
 import React from 'react'
 import { useLocation } from 'react-router-dom'
 
+// Debug component updated: 2024-06-29 11:40
 const DebugInfo: React.FC = () => {
   const location = useLocation()
   
