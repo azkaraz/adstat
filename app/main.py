@@ -22,10 +22,17 @@ app = FastAPI(
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_HOSTS,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8000", 
+        "https://azkaraz.github.io",
+        "https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app",
+        "*"  # Временно разрешаем все домены для тестирования
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Подключаем роуты
@@ -60,6 +67,15 @@ async def root():
 async def health_check():
     """Проверка здоровья приложения"""
     return {"status": "healthy", "message": "Ads Statistics Dashboard is running"}
+
+@app.get("/webapp-info")
+async def webapp_info():
+    """Информация о WebApp для отладки"""
+    return {
+        "webapp_url": "https://azkaraz.github.io/adstat",
+        "bot_token_configured": bool(settings.TELEGRAM_BOT_TOKEN),
+        "cors_configured": True
+    }
 
 if __name__ == "__main__":
     import uvicorn

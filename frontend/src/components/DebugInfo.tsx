@@ -17,6 +17,10 @@ const DebugInfo: React.FC = () => {
   const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user
   const telegramInitData = window.Telegram?.WebApp?.initData
 
+  // Дополнительная диагностика
+  const userAgent = navigator.userAgent
+  const isTelegramWebView = userAgent.includes('TelegramWebApp') || userAgent.includes('Telegram')
+
   return (
     <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-4 rounded-lg text-xs max-w-sm">
       <h3 className="font-bold mb-2">Debug Info</h3>
@@ -30,6 +34,15 @@ const DebugInfo: React.FC = () => {
       
       <div className="mb-2">
         <strong>Telegram WebApp:</strong> {hasTelegramWebApp ? 'Yes' : 'No'}
+      </div>
+      
+      <div className="mb-2">
+        <strong>User Agent:</strong>
+        <div className="text-xs break-all">{userAgent}</div>
+      </div>
+      
+      <div className="mb-2">
+        <strong>Is Telegram WebView:</strong> {isTelegramWebView ? 'Yes' : 'No'}
       </div>
       
       {telegramUser && (
