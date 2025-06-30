@@ -26,11 +26,33 @@ const TelegramAuthInitializer = () => {
       console.log('🔍 TelegramAuthInitializer: hasAttemptedAuth =', hasAttemptedAuth)
       console.log('🔍 TelegramAuthInitializer: window.Telegram =', window.Telegram)
       console.log('🔍 TelegramAuthInitializer: window.Telegram?.WebApp =', window.Telegram?.WebApp)
+      console.log('🔍 TelegramAuthInitializer: window.location.href =', window.location.href)
+      console.log('🔍 TelegramAuthInitializer: window.location.search =', window.location.search)
+      console.log('🔍 TelegramAuthInitializer: window.location.hash =', window.location.hash)
+      console.log('🔍 TelegramAuthInitializer: User-Agent =', navigator.userAgent)
+      
+      // Проверяем, загружен ли Telegram WebApp скрипт
+      const telegramScript = document.querySelector('script[src*="telegram"]')
+      console.log('🔍 TelegramAuthInitializer: Telegram script found =', !!telegramScript)
       
       // Защита от повторных попыток авторизации
       if (hasAttemptedAuth || user || loading) {
         console.log('❌ TelegramAuthInitializer: Пропускаем инициализацию - уже авторизован или в процессе')
         return
+      }
+      
+      // Ждем загрузки Telegram WebApp скрипта (максимум 5 секунд)
+      let attempts = 0
+      const maxAttempts = 50 // 50 попыток * 100ms = 5 секунд
+      
+      while (!window.Telegram?.WebApp && attempts < maxAttempts) {
+        console.log(`⏳ TelegramAuthInitializer: Ожидаем загрузки Telegram WebApp... (попытка ${attempts + 1}/${maxAttempts})`)
+        await new Promise(resolve => setTimeout(resolve, 100))
+        attempts++
+      }
+      
+      if (!window.Telegram?.WebApp) {
+        console.log('❌ TelegramAuthInitializer: Telegram WebApp не загрузился за отведенное время')
       }
       
       // Если Telegram WebApp недоступен, но есть данные в URL, создаем его
@@ -201,6 +223,7 @@ const TelegramAuthInitializer = () => {
       }
     }
 
+    // Запускаем инициализацию сразу
     initTelegramAuth()
   }, []) // Убираем зависимости, чтобы эффект запускался только один раз
 
