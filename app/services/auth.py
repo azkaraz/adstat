@@ -104,6 +104,10 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
                 f"{k}={v}" for k, v in sorted(data_dict.items())
                 if k not in ['hash', 'signature']
             ])
+            
+            print(f"DEBUG: Sorted keys: {sorted([k for k in data_dict.keys() if k not in ['hash', 'signature']])}")
+            print(f"DEBUG: Data check string: {data_check_string}")
+            print(f"DEBUG: Data check string bytes: {data_check_string.encode('utf-8')}")
         except Exception as e:
             print(f"DEBUG: Error parsing initData: {e}")
             return False
@@ -114,19 +118,25 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             f"{k}={v}" for k, v in sorted(telegram_data.items()) 
             if k not in ['hash', 'signature']
         ])
+        
+        print(f"DEBUG: Regular case - sorted keys: {sorted([k for k in telegram_data.keys() if k not in ['hash', 'signature']])}")
+        print(f"DEBUG: Regular case - data check string: {data_check_string}")
     
-    print(f"DEBUG: Data check string: {data_check_string}")
+    # Шаг 1: Создаем HMAC-SHA256 от токена бота с ключом "WebAppData"
+    secret_key = hmac.new(
+        "WebAppData".encode('utf-8'),
+        settings.TELEGRAM_BOT_TOKEN.encode('utf-8'),
+        hashlib.sha256
+    ).digest()
     
-    # Создаем секретный ключ
-    secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
-    
-    # Вычисляем хеш
+    # Шаг 2: Создаем HMAC-SHA256 от строки данных с секретным ключом
     computed_hash = hmac.new(
         secret_key,
-        data_check_string.encode(),
+        data_check_string.encode('utf-8'),
         hashlib.sha256
     ).hexdigest()
     
+    print(f"DEBUG: Secret key (first 16 bytes): {secret_key[:16].hex()}")
     print(f"DEBUG: Computed hash: {computed_hash}")
     print(f"DEBUG: Received hash: {received_hash}")
     print(f"DEBUG: Hashes match: {computed_hash == received_hash}")
