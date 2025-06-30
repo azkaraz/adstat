@@ -98,19 +98,21 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             print(f"DEBUG: Extracted hash: {received_hash}")
             print(f"DEBUG: Parsed data: {data_dict}")
             
-            # Создаем строку для проверки (без hash)
+            # Создаем строку для проверки (без hash и signature)
+            # Telegram использует только определенные поля для подписи
             data_check_string = '\n'.join([
                 f"{k}={v}" for k, v in sorted(data_dict.items())
+                if k not in ['hash', 'signature']
             ])
         except Exception as e:
             print(f"DEBUG: Error parsing initData: {e}")
             return False
     else:
         # Обычный случай - hash пришел отдельно
-        # Получаем данные для проверки
+        # Получаем данные для проверки (без hash и signature)
         data_check_string = '\n'.join([
             f"{k}={v}" for k, v in sorted(telegram_data.items()) 
-            if k != 'hash'
+            if k not in ['hash', 'signature']
         ])
     
     print(f"DEBUG: Data check string: {data_check_string}")
