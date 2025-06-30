@@ -10,6 +10,9 @@ import TestAuth from './pages/TestAuth'
 import DebugInfo from './components/DebugInfo'
 import './App.css'
 
+// Определяем базовый путь для GitHub Pages
+const basename = import.meta.env.MODE === 'production' ? '/adstat' : '/'
+
 // Компонент для инициализации Telegram аутентификации
 const TelegramAuthInitializer = () => {
   const { login, user, loading } = useAuth()
@@ -46,7 +49,73 @@ const TelegramAuthInitializer = () => {
                 platform: urlData.get('tgWebAppPlatform') || '',
                 version: urlData.get('tgWebAppVersion') || '',
                 ready: () => console.log('✅ Telegram WebApp ready'),
-                expand: () => console.log('✅ Telegram WebApp expanded')
+                expand: () => console.log('✅ Telegram WebApp expanded'),
+                close: () => {},
+                isExpanded: false,
+                viewportHeight: 0,
+                viewportStableHeight: 0,
+                headerColor: '',
+                backgroundColor: '',
+                themeParams: {},
+                colorScheme: 'light',
+                isClosingConfirmationEnabled: false,
+                BackButton: {
+                  isVisible: false,
+                  text: '',
+                  show: () => {},
+                  hide: () => {},
+                  onClick: () => {},
+                  offClick: () => {}
+                },
+                MainButton: {
+                  text: '',
+                  color: '',
+                  textColor: '',
+                  isVisible: false,
+                  isProgressVisible: false,
+                  isActive: false,
+                  show: () => {},
+                  hide: () => {},
+                  enable: () => {},
+                  disable: () => {},
+                  showProgress: () => {},
+                  hideProgress: () => {},
+                  onClick: () => {},
+                  offClick: () => {}
+                },
+                HapticFeedback: {
+                  impactOccurred: () => {},
+                  notificationOccurred: () => {},
+                  selectionChanged: () => {}
+                },
+                CloudStorage: {
+                  getItem: async () => null,
+                  setItem: async () => {},
+                  getItems: async () => ({}),
+                  removeItem: async () => {},
+                  removeItems: async () => {}
+                },
+                showAlert: () => {},
+                showConfirm: () => {},
+                showPopup: () => {},
+                showScanQrPopup: () => {},
+                closeScanQrPopup: () => {},
+                readTextFromClipboard: () => {},
+                requestWriteAccess: () => {},
+                requestContact: () => {},
+                invokeCustomMethod: () => {},
+                switchInlineQuery: () => {},
+                openLink: () => {},
+                openTelegramLink: () => {},
+                openInvoice: () => {},
+                setHeaderColor: () => {},
+                setBackgroundColor: () => {},
+                enableClosingConfirmation: () => {},
+                disableClosingConfirmation: () => {},
+                onEvent: () => {},
+                offEvent: () => {},
+                sendData: () => {},
+                isVersionAtLeast: () => false
               }
             }
             
@@ -125,7 +194,7 @@ function App() {
   return (
     <AuthProvider>
       <TelegramAuthInitializer />
-      <Router>
+      <Router basename={basename}>
         <div className="min-h-screen bg-gray-50">
           <Navbar />
           <main className="container mx-auto px-4 py-8">
