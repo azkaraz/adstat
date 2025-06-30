@@ -52,6 +52,10 @@ export interface TelegramAuthData {
   hash: string
 }
 
+export interface TelegramWebAppAuthData {
+  initData: string
+}
+
 export interface AuthResponse {
   access_token: string
   token_type: string
@@ -107,6 +111,31 @@ export const authService = {
     }
   },
 
+  async telegramWebAppAuth(data: TelegramWebAppAuthData): Promise<AuthResponse> {
+    console.log('🔍 authService.telegramWebAppAuth: Начинаем WebApp авторизацию')
+    console.log('📤 authService.telegramWebAppAuth: Отправляем initData:', data.initData)
+    console.log('🌐 authService.telegramWebAppAuth: URL:', `${API_BASE_URL}/auth/web-app/auth/telegram`)
+    
+    // Если уже есть активный запрос авторизации, возвращаем его
+    if (this._authInProgress && this._authPromise) {
+      console.log('⚠️ authService.telegramWebAppAuth: Уже есть активный запрос авторизации, возвращаем существующий')
+      return this._authPromise
+    }
+    
+    // Создаем новый запрос
+    this._authInProgress = true
+    this._authPromise = this._performTelegramWebAppAuth(data)
+    
+    try {
+      const result = await this._authPromise
+      return result
+    } finally {
+      // Сбрасываем флаги после завершения
+      this._authInProgress = false
+      this._authPromise = null
+    }
+  },
+
   async _performTelegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
     const maxRetries = 3
     const baseDelay = 1000 // 1 секунда
@@ -123,6 +152,45 @@ export const authService = {
         if (error.response?.status === 429 && attempt < maxRetries) {
           const delay = baseDelay * Math.pow(2, attempt - 1) // Экспоненциальная задержка
           console.log(`⏳ authService.telegramAuth: Ожидаем ${delay}ms перед повтором...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        
+        // Для других ошибок или последней попытки - выбрасываем ошибку
+        throw error
+      }
+    }
+    
+    // Этот код не должен выполняться, но на всякий случай
+    throw new Error('Превышено максимальное количество попыток авторизации')
+  },
+
+  async _performTelegramWebAppAuth(data: TelegramWebAppAuthData): Promise<AuthResponse> {
+    const maxRetries = 3
+    const baseDelay = 1000 // 1 секунда
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await api.post('/auth/web-app/auth/telegram', data)
+        console.log('✅ authService.telegramWebAppAuth: Ответ получен:', response.data)
+        
+        // Проверяем успешность авторизации
+        if (response.data.success) {
+          return {
+            access_token: response.data.access_token,
+            token_type: response.data.token_type,
+            user: response.data.user_data
+          }
+        } else {
+          throw new Error(response.data.error || 'Авторизация не удалась')
+        }
+      } catch (error: any) {
+        console.error(`❌ authService.telegramWebAppAuth: Попытка ${attempt}/${maxRetries} - Ошибка:`, error)
+        
+        // Если это ошибка 429 (Too Many Requests), ждем и повторяем
+        if (error.response?.status === 429 && attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1) // Экспоненциальная задержка
+          console.log(`⏳ authService.telegramWebAppAuth: Ожидаем ${delay}ms перед повтором...`)
           await new Promise(resolve => setTimeout(resolve, delay))
           continue
         }

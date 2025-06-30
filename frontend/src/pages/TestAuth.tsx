@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { authService } from '../services/authService'
 
 const TestAuth: React.FC = () => {
   const { user, token, login } = useAuth()
@@ -28,17 +29,7 @@ const TestAuth: React.FC = () => {
     setLoading(true)
     try {
       const tg = window.Telegram.WebApp
-      const data = {
-        id: tg.initDataUnsafe.user.id,
-        first_name: tg.initDataUnsafe.user.first_name,
-        last_name: tg.initDataUnsafe.user.last_name || '',
-        username: tg.initDataUnsafe.user.username || '',
-        photo_url: tg.initDataUnsafe.user.photo_url || '',
-        auth_date: Math.floor(Date.now() / 1000),
-        hash: tg.initData
-      }
-      
-      await login(data)
+      await authService.telegramWebAppAuth({ initData: tg.initData })
       alert('Авторизация успешна!')
     } catch (error) {
       console.error('Ошибка авторизации:', error)

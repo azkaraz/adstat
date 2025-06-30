@@ -198,20 +198,9 @@ const TelegramAuthInitializer = () => {
           setHasAttemptedAuth(true)
           
           try {
-            // Создаем объект с данными для авторизации
-            // Важно: используем initData для проверки подписи
-            const telegramData = {
-              id: tg.initDataUnsafe.user.id,
-              first_name: tg.initDataUnsafe.user.first_name,
-              last_name: tg.initDataUnsafe.user.last_name || '',
-              username: tg.initDataUnsafe.user.username || '',
-              photo_url: tg.initDataUnsafe.user.photo_url || '',
-              auth_date: Math.floor(Date.now() / 1000), // Текущее время в секундах
-              hash: tg.initData // Это строка с подписью от Telegram
-            }
-            
-            console.log('📤 TelegramAuthInitializer: Отправляем данные для авторизации:', telegramData)
-            await login(telegramData)
+            // Используем новый метод с initData
+            console.log('📤 TelegramAuthInitializer: Отправляем initData для авторизации:', tg.initData)
+            await login({ initData: tg.initData })
             console.log('✅ TelegramAuthInitializer: Авторизация успешна!')
           } catch (error) {
             console.error('❌ TelegramAuthInitializer: Ошибка авторизации:', error)

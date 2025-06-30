@@ -57,15 +57,11 @@ const Login: React.FC = () => {
       console.log('version:', tg.version)
 
       if (tg.initDataUnsafe?.user) {
+        // Используем новый формат с initData
         const telegramData = {
-          ...tg.initDataUnsafe.user,
-          auth_date: Math.floor(Date.now() / 1000),
-          hash: tg.initData
+          initData: tg.initData
         }
-        
         console.log('Telegram WebApp auth data:', telegramData)
-        console.log('🔍 Login: Декодированный initData:', decodeURIComponent(tg.initData))
-        console.log('🔍 Login: initDataUnsafe.user:', tg.initDataUnsafe.user)
         return login(telegramData)
       } else {
         console.log('No user data in Telegram WebApp')

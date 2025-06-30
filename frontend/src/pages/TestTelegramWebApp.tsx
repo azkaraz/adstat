@@ -1,106 +1,136 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
+import { authService } from '../services/authService'
 
 const TestTelegramWebApp: React.FC = () => {
-  const [telegramData, setTelegramData] = useState<any>(null)
-  const [diagnostics, setDiagnostics] = useState<any>({})
+  const [initData, setInitData] = useState('')
+  const [result, setResult] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>('')
 
-  useEffect(() => {
-    // Собираем диагностическую информацию
-    const diag = {
-      userAgent: navigator.userAgent,
-      referrer: document.referrer,
-      url: window.location.href,
-      search: window.location.search,
-      hash: window.location.hash,
-      hasTelegram: !!window.Telegram,
-      hasWebApp: !!window.Telegram?.WebApp,
-      telegramScript: !!document.querySelector('script[src*="telegram"]'),
-      isTelegramWebApp: navigator.userAgent.includes('TelegramWebApp'),
-      referrerHasTelegram: document.referrer.includes('telegram'),
-      urlHasTgWebApp: window.location.search.includes('tgWebApp') || window.location.hash.includes('tgWebApp')
+  const handleTest = async () => {
+    if (!initData.trim()) {
+      setError('Введите initData')
+      return
     }
-    
-    setDiagnostics(diag)
 
-    // Получаем данные Telegram WebApp
+    setLoading(true)
+    setError('')
+    setResult(null)
+
+    try {
+      const response = await authService.telegramWebAppAuth({ initData })
+      setResult(response)
+      console.log('✅ WebApp auth successful:', response)
+    } catch (err: any) {
+      setError(err.message || 'Ошибка авторизации')
+      console.error('❌ WebApp auth failed:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGetFromTelegram = () => {
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp
-      setTelegramData({
+      setInitData(tg.initData || '')
+      console.log('📊 Telegram WebApp data:', {
         initData: tg.initData,
         initDataUnsafe: tg.initDataUnsafe,
         platform: tg.platform,
-        version: tg.version,
-        isExpanded: tg.isExpanded,
-        viewportHeight: tg.viewportHeight,
-        colorScheme: tg.colorScheme
+        version: tg.version
       })
+    } else {
+      setError('Telegram WebApp недоступен')
     }
-  }, [])
+  }
 
-  const copyDiagnostics = () => {
-    const text = JSON.stringify(diagnostics, null, 2)
-    navigator.clipboard.writeText(text)
-    alert('Диагностика скопирована в буфер обмена!')
+  const handleTestWithMockData = () => {
+    // Тестовые данные в формате initData
+    const mockInitData = 'user=%7B%22id%22%3A123456789%2C%22first_name%22%3A%22Test%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22testuser%22%7D&auth_date=1234567890&hash=mock_hash'
+    setInitData(mockInitData)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">🔍 Тест Telegram WebApp</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Тест Telegram WebApp Auth</h1>
+      
+      <div className="bg-gray-100 p-6 rounded-lg mb-6">
+        <h2 className="text-xl font-semibold mb-4">Информация о Telegram WebApp</h2>
+        <div className="space-y-2">
+          <p><strong>Telegram доступен:</strong> {window.Telegram ? '✅ Да' : '❌ Нет'}</p>
+          <p><strong>WebApp доступен:</strong> {window.Telegram?.WebApp ? '✅ Да' : '❌ Нет'}</p>
+          {window.Telegram?.WebApp && (
+            <>
+              <p><strong>Platform:</strong> {window.Telegram.WebApp.platform}</p>
+              <p><strong>Version:</strong> {window.Telegram.WebApp.version}</p>
+              <p><strong>initData:</strong> {window.Telegram.WebApp.initData || 'Нет данных'}</p>
+              <p><strong>initDataUnsafe:</strong> {JSON.stringify(window.Telegram.WebApp.initDataUnsafe, null, 2)}</p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Тест авторизации</h2>
         
-        {/* Статус */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-semibold mb-4">📊 Статус</h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><strong>Telegram объект:</strong> {diagnostics.hasTelegram ? '✅ Да' : '❌ Нет'}</div>
-            <div><strong>WebApp доступен:</strong> {diagnostics.hasWebApp ? '✅ Да' : '❌ Нет'}</div>
-            <div><strong>Telegram скрипт:</strong> {diagnostics.telegramScript ? '✅ Загружен' : '❌ Не загружен'}</div>
-            <div><strong>User-Agent Telegram:</strong> {diagnostics.isTelegramWebApp ? '✅ Да' : '❌ Нет'}</div>
-            <div><strong>Referrer Telegram:</strong> {diagnostics.referrerHasTelegram ? '✅ Да' : '❌ Нет'}</div>
-            <div><strong>URL содержит tgWebApp:</strong> {diagnostics.urlHasTgWebApp ? '✅ Да' : '❌ Нет'}</div>
-          </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            initData:
+          </label>
+          <textarea
+            value={initData}
+            onChange={(e) => setInitData(e.target.value)}
+            className="w-full h-32 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Введите initData строку..."
+          />
         </div>
 
-        {/* Диагностика */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">🔧 Диагностика</h2>
-            <button 
-              onClick={copyDiagnostics}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            >
-              📋 Копировать
-            </button>
-          </div>
-          <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto max-h-96">
-            {JSON.stringify(diagnostics, null, 2)}
-          </pre>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={handleGetFromTelegram}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Получить из Telegram
+          </button>
+          <button
+            onClick={handleTestWithMockData}
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Тестовые данные
+          </button>
+          <button
+            onClick={handleTest}
+            disabled={loading}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+          >
+            {loading ? 'Тестируем...' : 'Тестировать'}
+          </button>
         </div>
 
-        {/* Данные Telegram WebApp */}
-        {telegramData && (
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-xl font-semibold mb-4">📱 Данные Telegram WebApp</h2>
-            <pre className="bg-gray-100 p-4 rounded text-xs overflow-auto max-h-96">
-              {JSON.stringify(telegramData, null, 2)}
-            </pre>
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <strong>Ошибка:</strong> {error}
           </div>
         )}
 
-        {/* Инструкции */}
-        <div className="bg-blue-50 p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">📋 Инструкции</h2>
-          <div className="space-y-2 text-sm">
-            <p><strong>1.</strong> Откройте @BotFather в Telegram</p>
-            <p><strong>2.</strong> Отправьте команду <code>/newapp</code></p>
-            <p><strong>3.</strong> Выберите вашего бота</p>
-            <p><strong>4.</strong> Введите название: <code>Ads Statistics Dashboard</code></p>
-            <p><strong>5.</strong> Введите URL: <code>https://azkaraz.github.io/adstat/</code></p>
-            <p><strong>6.</strong> Загрузите иконку</p>
-            <p><strong>7.</strong> Откройте бота и нажмите кнопку WebApp</p>
-            <p><strong>8.</strong> Проверьте эту страницу в контексте WebApp</p>
+        {result && (
+          <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            <h3 className="font-semibold mb-2">✅ Успешная авторизация:</h3>
+            <pre className="text-sm overflow-auto">
+              {JSON.stringify(result, null, 2)}
+            </pre>
           </div>
-        </div>
+        )}
+      </div>
+
+      <div className="mt-6 bg-yellow-100 p-4 rounded-lg">
+        <h3 className="font-semibold mb-2">📋 Инструкции:</h3>
+        <ol className="list-decimal list-inside space-y-1 text-sm">
+          <li>Откройте приложение через Telegram WebApp</li>
+          <li>Нажмите "Получить из Telegram" для автоматического заполнения</li>
+          <li>Или введите initData вручную</li>
+          <li>Нажмите "Тестировать" для проверки авторизации</li>
+        </ol>
       </div>
     </div>
   )

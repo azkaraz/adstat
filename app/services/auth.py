@@ -100,12 +100,14 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             
             # Создаем строку для проверки (без hash и signature)
             # Telegram использует только определенные поля для подписи
+            # Исключаем hash и signature из проверки
+            fields_to_exclude = ['hash', 'signature']
             data_check_string = '\n'.join([
                 f"{k}={v}" for k, v in sorted(data_dict.items())
-                if k not in ['hash', 'signature']
+                if k not in fields_to_exclude
             ])
             
-            print(f"DEBUG: Sorted keys: {sorted([k for k in data_dict.keys() if k not in ['hash', 'signature']])}")
+            print(f"DEBUG: Sorted keys: {sorted([k for k in data_dict.keys() if k not in fields_to_exclude])}")
             print(f"DEBUG: Data check string: {data_check_string}")
             print(f"DEBUG: Data check string bytes: {data_check_string.encode('utf-8')}")
         except Exception as e:
@@ -114,34 +116,41 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
     else:
         # Обычный случай - hash пришел отдельно
         # Получаем данные для проверки (без hash и signature)
+        fields_to_exclude = ['hash', 'signature']
         data_check_string = '\n'.join([
             f"{k}={v}" for k, v in sorted(telegram_data.items()) 
-            if k not in ['hash', 'signature']
+            if k not in fields_to_exclude
         ])
         
-        print(f"DEBUG: Regular case - sorted keys: {sorted([k for k in telegram_data.keys() if k not in ['hash', 'signature']])}")
+        print(f"DEBUG: Regular case - sorted keys: {sorted([k for k in telegram_data.keys() if k not in fields_to_exclude])}")
         print(f"DEBUG: Regular case - data check string: {data_check_string}")
     
-    # Шаг 1: Создаем HMAC-SHA256 от токена бота с ключом "WebAppData"
-    secret_key = hmac.new(
-        "WebAppData".encode('utf-8'),
-        settings.TELEGRAM_BOT_TOKEN.encode('utf-8'),
-        hashlib.sha256
-    ).digest()
-    
-    # Шаг 2: Создаем HMAC-SHA256 от строки данных с секретным ключом
-    computed_hash = hmac.new(
-        secret_key,
-        data_check_string.encode('utf-8'),
-        hashlib.sha256
-    ).hexdigest()
-    
-    print(f"DEBUG: Secret key (first 16 bytes): {secret_key[:16].hex()}")
-    print(f"DEBUG: Computed hash: {computed_hash}")
-    print(f"DEBUG: Received hash: {received_hash}")
-    print(f"DEBUG: Hashes match: {computed_hash == received_hash}")
-    
-    return computed_hash == received_hash
+    # Правильная реализация проверки подписи Telegram
+    try:
+        # Шаг 1: Создаем HMAC-SHA256 от токена бота с ключом "WebAppData"
+        secret_key = hmac.new(
+            "WebAppData".encode('utf-8'),
+            settings.TELEGRAM_BOT_TOKEN.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+        
+        # Шаг 2: Создаем HMAC-SHA256 от строки данных с секретным ключом
+        computed_hash = hmac.new(
+            secret_key,
+            data_check_string.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        print(f"DEBUG: Secret key (first 16 bytes): {secret_key[:16].hex()}")
+        print(f"DEBUG: Computed hash: {computed_hash}")
+        print(f"DEBUG: Received hash: {received_hash}")
+        print(f"DEBUG: Hashes match: {computed_hash == received_hash}")
+        
+        return computed_hash == received_hash
+        
+    except Exception as e:
+        print(f"DEBUG: Error during signature verification: {e}")
+        return False
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),

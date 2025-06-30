@@ -63,7 +63,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Starting login with telegram data:', telegramData)
       setLoading(true)
       
-      const response = await authService.telegramAuth(telegramData)
+      let response
+      
+      // Проверяем формат данных
+      if (telegramData.initData) {
+        // Новый формат с initData
+        console.log('Using WebApp auth with initData')
+        response = await authService.telegramWebAppAuth({ initData: telegramData.initData })
+      } else {
+        // Старый формат с объектом данных
+        console.log('Using legacy auth with telegram data object')
+        response = await authService.telegramAuth(telegramData)
+      }
+      
       console.log('Login successful:', response)
       
       setToken(response.access_token)
