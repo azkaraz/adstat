@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Upload from './pages/Upload'
 import TestAuth from './pages/TestAuth'
+import TestTelegramWebApp from './pages/TestTelegramWebApp'
 import DebugInfo from './components/DebugInfo'
 import './App.css'
 
@@ -30,10 +31,19 @@ const TelegramAuthInitializer = () => {
       console.log('🔍 TelegramAuthInitializer: window.location.search =', window.location.search)
       console.log('🔍 TelegramAuthInitializer: window.location.hash =', window.location.hash)
       console.log('🔍 TelegramAuthInitializer: User-Agent =', navigator.userAgent)
+      console.log('🔍 TelegramAuthInitializer: Referrer =', document.referrer)
       
       // Проверяем, загружен ли Telegram WebApp скрипт
       const telegramScript = document.querySelector('script[src*="telegram"]')
       console.log('🔍 TelegramAuthInitializer: Telegram script found =', !!telegramScript)
+      
+      // Проверяем, открыто ли приложение через Telegram
+      const isTelegramWebApp = navigator.userAgent.includes('TelegramWebApp') || 
+                              document.referrer.includes('telegram') ||
+                              window.location.search.includes('tgWebApp') ||
+                              window.location.hash.includes('tgWebApp')
+      
+      console.log('🔍 TelegramAuthInitializer: Is Telegram WebApp =', isTelegramWebApp)
       
       // Защита от повторных попыток авторизации
       if (hasAttemptedAuth || user || loading) {
@@ -53,6 +63,16 @@ const TelegramAuthInitializer = () => {
       
       if (!window.Telegram?.WebApp) {
         console.log('❌ TelegramAuthInitializer: Telegram WebApp не загрузился за отведенное время')
+        console.log('🔍 TelegramAuthInitializer: Диагностика проблемы:')
+        console.log('   - User-Agent содержит TelegramWebApp:', navigator.userAgent.includes('TelegramWebApp'))
+        console.log('   - Referrer содержит telegram:', document.referrer.includes('telegram'))
+        console.log('   - URL содержит tgWebApp:', window.location.search.includes('tgWebApp') || window.location.hash.includes('tgWebApp'))
+        console.log('   - Telegram скрипт загружен:', !!telegramScript)
+        console.log('   - Возможные причины:')
+        console.log('     * Приложение открыто не через Telegram WebApp')
+        console.log('     * Mini App не настроен в BotFather')
+        console.log('     * URL в настройках Mini App неправильный')
+        console.log('     * Telegram WebApp скрипт не загрузился')
       }
       
       // Если Telegram WebApp недоступен, но есть данные в URL, создаем его
@@ -244,6 +264,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/test" element={<TestAuth />} />
+              <Route path="/test-telegram-web-app" element={<TestTelegramWebApp />} />
             </Routes>
           </main>
           <DebugInfo />

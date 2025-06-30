@@ -35,6 +35,16 @@ const Login: React.FC = () => {
   // Функция для авторизации через Telegram WebApp
   const handleTelegramWebAppAuth = () => {
     console.log('Checking Telegram WebApp...')
+    console.log('🔍 Login: window.Telegram =', window.Telegram)
+    console.log('🔍 Login: window.Telegram?.WebApp =', window.Telegram?.WebApp)
+    console.log('🔍 Login: window.location.href =', window.location.href)
+    console.log('🔍 Login: User-Agent =', navigator.userAgent)
+    console.log('🔍 Login: Referrer =', document.referrer)
+    
+    // Проверяем, загружен ли Telegram WebApp скрипт
+    const telegramScript = document.querySelector('script[src*="telegram"]')
+    console.log('🔍 Login: Telegram script found =', !!telegramScript)
+    
     if (window.Telegram?.WebApp) {
       console.log('Telegram WebApp found!')
       const tg = window.Telegram.WebApp
@@ -43,6 +53,8 @@ const Login: React.FC = () => {
 
       console.log('initDataUnsafe:', tg.initDataUnsafe)
       console.log('initData:', tg.initData)
+      console.log('platform:', tg.platform)
+      console.log('version:', tg.version)
 
       if (tg.initDataUnsafe?.user) {
         const telegramData = {
@@ -58,6 +70,11 @@ const Login: React.FC = () => {
       }
     } else {
       console.log('Telegram WebApp not found')
+      console.log('🔍 Login: Возможные причины:')
+      console.log('   - Приложение открыто не через Telegram WebApp')
+      console.log('   - Mini App не настроен в BotFather')
+      console.log('   - Telegram WebApp скрипт не загрузился')
+      console.log('   - URL неправильный в настройках Mini App')
     }
     return Promise.reject('No Telegram WebApp data')
   }
