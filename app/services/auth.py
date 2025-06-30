@@ -81,8 +81,11 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             from urllib.parse import parse_qs, unquote
             # Декодируем URL-encoded строку
             decoded_data = unquote(received_hash)
+            print(f"DEBUG: Decoded initData: {decoded_data}")
+            
             # Парсим параметры
             params = parse_qs(decoded_data)
+            print(f"DEBUG: Parsed params: {params}")
             
             # Создаем словарь с данными
             data_dict = {}
@@ -95,7 +98,7 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             print(f"DEBUG: Extracted hash: {received_hash}")
             print(f"DEBUG: Parsed data: {data_dict}")
             
-            # Создаем строку для проверки
+            # Создаем строку для проверки (без hash)
             data_check_string = '\n'.join([
                 f"{k}={v}" for k, v in sorted(data_dict.items())
             ])

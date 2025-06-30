@@ -64,6 +64,8 @@ const Login: React.FC = () => {
         }
         
         console.log('Telegram WebApp auth data:', telegramData)
+        console.log('🔍 Login: Декодированный initData:', decodeURIComponent(tg.initData))
+        console.log('🔍 Login: initDataUnsafe.user:', tg.initDataUnsafe.user)
         return login(telegramData)
       } else {
         console.log('No user data in Telegram WebApp')
