@@ -82,35 +82,17 @@ declare global {
         }
         showAlert: (message: string, callback?: () => void) => void
         showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void
-        showPopup: (params: {
-          title?: string
-          message: string
-          buttons?: Array<{
-            id?: string
-            type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive'
-            text: string
-          }>
-        }, callback?: (buttonId: string) => void) => void
-        showScanQrPopup: (params: {
-          text?: string
-        }, callback?: (data: string) => void) => void
-        closeScanQrPopup: () => void
-        readTextFromClipboard: (callback?: (data: string | null) => void) => void
+        showPopup: (params: any, callback?: (buttonId: string) => void) => void
+        showScanQrPopup: (params: any, callback?: (data: string) => void) => void
+        closeScanQrPopup: (callback?: () => void) => void
+        readTextFromClipboard: (callback?: (data: string) => void) => void
         requestWriteAccess: (callback?: (access: boolean) => void) => void
-        requestContact: (callback?: (contact: {
-          phone_number: string
-          first_name: string
-          last_name?: string
-          user_id?: number
-          vcard?: string
-        } | null) => void) => void
+        requestContact: (callback?: (contact: any) => void) => void
         invokeCustomMethod: (method: string, params?: any) => void
         switchInlineQuery: (query: string, choose_chat_types?: string[]) => void
-        openLink: (url: string, options?: {
-          try_instant_view?: boolean
-        }) => void
+        openLink: (url: string, options?: { try_instant_view?: boolean }) => void
         openTelegramLink: (url: string) => void
-        openInvoice: (url: string, callback?: (status: 'paid' | 'cancelled' | 'failed' | 'pending') => void) => void
+        openInvoice: (url: string, callback?: (status: string) => void) => void
         setHeaderColor: (color: string) => void
         setBackgroundColor: (color: string) => void
         enableClosingConfirmation: () => void
@@ -121,9 +103,11 @@ declare global {
         isVersionAtLeast: (version: string) => boolean
         platform: string
         version: string
-        initData: string
-        initDataUnsafe: any
       }
+    }
+    authService?: {
+      _authInProgress: boolean
+      _authPromise: Promise<any> | null
     }
   }
 }

@@ -6,6 +6,8 @@ const Login: React.FC = () => {
   const { user, login, loading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [hasAttemptedAutoAuth, setHasAttemptedAutoAuth] = React.useState(false)
+  const [errorMessage, setErrorMessage] = React.useState<string>('')
 
   // Функция для извлечения параметров из URL
   const getUrlParams = () => {
@@ -89,6 +91,7 @@ const Login: React.FC = () => {
     console.log('Login component mounted')
     console.log('Current URL:', window.location.href)
     console.log('User state:', user)
+    console.log('Has attempted auto auth:', hasAttemptedAutoAuth)
     
     if (user) {
       console.log('User already logged in, redirecting...')
@@ -96,9 +99,18 @@ const Login: React.FC = () => {
       return
     }
 
+    // Защита от повторных попыток автоматической авторизации
+    if (hasAttemptedAutoAuth || loading) {
+      console.log('Skipping auto auth - already attempted or loading')
+      return
+    }
+
     // Пытаемся авторизоваться автоматически
     const autoAuth = async () => {
       console.log('Starting automatic auth...')
+      setHasAttemptedAutoAuth(true)
+      setErrorMessage('')
+      
       try {
         // Сначала пробуем Telegram WebApp
         console.log('Trying Telegram WebApp auth...')
@@ -113,27 +125,57 @@ const Login: React.FC = () => {
         } catch (urlError) {
           console.log('URL params auth failed:', urlError)
           console.log('No automatic auth methods worked, showing manual login button')
+          
+          // Показываем информативное сообщение об ошибке
+          if (error instanceof Error) {
+            if (error.message.includes('429')) {
+              setErrorMessage('Слишком много запросов. Попробуйте через несколько секунд.')
+            } else if (error.message.includes('Network Error')) {
+              setErrorMessage('Ошибка подключения к серверу. Проверьте интернет-соединение.')
+            } else {
+              setErrorMessage(`Ошибка авторизации: ${error.message}`)
+            }
+          } else {
+            setErrorMessage('Не удалось выполнить автоматическую авторизацию')
+          }
         }
       }
     }
 
     autoAuth()
-  }, [user, login, navigate, location])
+  }, []) // Убираем зависимости, чтобы эффект запускался только один раз
 
-  const handleTelegramLogin = () => {
+  const handleTelegramLogin = async () => {
     console.log('Manual Telegram login clicked')
-    // Для тестирования вне Telegram
-    const mockData = {
-      id: 123456789,
-      first_name: "Тестовый",
-      last_name: "Пользователь",
-      username: "test_user",
-      auth_date: Math.floor(Date.now() / 1000),
-      hash: "mock_hash"
-    }
+    setErrorMessage('')
     
-    console.log('Using mock data for testing:', mockData)
-    login(mockData).catch(console.error)
+    try {
+      // Для тестирования вне Telegram
+      const mockData = {
+        id: 123456789,
+        first_name: "Тестовый",
+        last_name: "Пользователь",
+        username: "test_user",
+        auth_date: Math.floor(Date.now() / 1000),
+        hash: "mock_hash"
+      }
+      
+      console.log('Using mock data for testing:', mockData)
+      await login(mockData)
+    } catch (error) {
+      console.error('Manual login error:', error)
+      if (error instanceof Error) {
+        if (error.message.includes('429')) {
+          setErrorMessage('Слишком много запросов. Попробуйте через несколько секунд.')
+        } else if (error.message.includes('Network Error')) {
+          setErrorMessage('Ошибка подключения к серверу. Проверьте интернет-соединение.')
+        } else {
+          setErrorMessage(`Ошибка авторизации: ${error.message}`)
+        }
+      } else {
+        setErrorMessage('Неизвестная ошибка при авторизации')
+      }
+    }
   }
 
   if (loading) {
@@ -159,19 +201,47 @@ const Login: React.FC = () => {
           </p>
         </div>
         
+        {/* Сообщение об ошибке */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800">
+                  {errorMessage}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mt-8 space-y-6">
           <div>
             <button
               onClick={handleTelegramLogin}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                <svg className="h-5 w-5 text-blue-500 group-hover:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-              </span>
-              Войти через Telegram
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Авторизация...
+                </>
+              ) : (
+                <>
+                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <svg className="h-5 w-5 text-blue-500 group-hover:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                  </span>
+                  Войти через Telegram
+                </>
+              )}
             </button>
           </div>
           

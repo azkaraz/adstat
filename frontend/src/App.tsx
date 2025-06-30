@@ -16,14 +16,22 @@ const basename = import.meta.env.MODE === 'production' ? '/adstat' : '/'
 // Компонент для инициализации Telegram аутентификации
 const TelegramAuthInitializer = () => {
   const { login, user, loading } = useAuth()
+  const [hasAttemptedAuth, setHasAttemptedAuth] = React.useState(false)
 
   React.useEffect(() => {
     const initTelegramAuth = async () => {
       console.log('🔍 TelegramAuthInitializer: Начинаем инициализацию')
       console.log('🔍 TelegramAuthInitializer: user =', user)
       console.log('🔍 TelegramAuthInitializer: loading =', loading)
+      console.log('🔍 TelegramAuthInitializer: hasAttemptedAuth =', hasAttemptedAuth)
       console.log('🔍 TelegramAuthInitializer: window.Telegram =', window.Telegram)
       console.log('🔍 TelegramAuthInitializer: window.Telegram?.WebApp =', window.Telegram?.WebApp)
+      
+      // Защита от повторных попыток авторизации
+      if (hasAttemptedAuth || user || loading) {
+        console.log('❌ TelegramAuthInitializer: Пропускаем инициализацию - уже авторизован или в процессе')
+        return
+      }
       
       // Если Telegram WebApp недоступен, но есть данные в URL, создаем его
       if (!window.Telegram?.WebApp && window.location.hash.includes('tgWebAppData')) {
@@ -126,7 +134,7 @@ const TelegramAuthInitializer = () => {
         }
       }
       
-      if (window.Telegram?.WebApp && !user && !loading) {
+      if (window.Telegram?.WebApp && !user && !loading && !hasAttemptedAuth) {
         console.log('✅ TelegramAuthInitializer: Telegram WebApp доступен')
         const tg = window.Telegram.WebApp
         
@@ -143,6 +151,10 @@ const TelegramAuthInitializer = () => {
         // Проверяем, есть ли данные пользователя от Telegram
         if (tg.initDataUnsafe?.user) {
           console.log('✅ TelegramAuthInitializer: Данные пользователя найдены')
+          
+          // Отмечаем, что попытка авторизации была сделана
+          setHasAttemptedAuth(true)
+          
           try {
             // Создаем объект с данными для авторизации
             // Важно: используем initData для проверки подписи
@@ -161,6 +173,8 @@ const TelegramAuthInitializer = () => {
             console.log('✅ TelegramAuthInitializer: Авторизация успешна!')
           } catch (error) {
             console.error('❌ TelegramAuthInitializer: Ошибка авторизации:', error)
+            // Сбрасываем флаг, чтобы можно было попробовать снова
+            setHasAttemptedAuth(false)
             // Если автоматическая авторизация не удалась, 
             // пользователь может войти вручную
           }
@@ -172,6 +186,8 @@ const TelegramAuthInitializer = () => {
             platform: tg.platform,
             version: tg.version
           })
+          // Отмечаем, что попытка была сделана, но данных нет
+          setHasAttemptedAuth(true)
         }
       } else {
         console.log('❌ TelegramAuthInitializer: Telegram WebApp недоступен или пользователь уже авторизован')
@@ -179,13 +195,14 @@ const TelegramAuthInitializer = () => {
           hasTelegram: !!window.Telegram,
           hasWebApp: !!window.Telegram?.WebApp,
           userExists: !!user,
-          isLoading: loading
+          isLoading: loading,
+          hasAttempted: hasAttemptedAuth
         })
       }
     }
 
     initTelegramAuth()
-  }, [login, user, loading])
+  }, []) // Убираем зависимости, чтобы эффект запускался только один раз
 
   return <></>
 }

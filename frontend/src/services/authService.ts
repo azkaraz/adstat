@@ -78,19 +78,62 @@ export interface UserProfile {
 }
 
 export const authService = {
+  // Флаг для отслеживания активного запроса авторизации
+  _authInProgress: false,
+  _authPromise: null as Promise<AuthResponse> | null,
+
   async telegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
     console.log('🔍 authService.telegramAuth: Начинаем авторизацию')
     console.log('📤 authService.telegramAuth: Отправляем данные:', data)
     console.log('🌐 authService.telegramAuth: URL:', `${API_BASE_URL}/auth/telegram`)
     
-    try {
-      const response = await api.post('/auth/telegram', data)
-      console.log('✅ authService.telegramAuth: Ответ получен:', response.data)
-      return response.data
-    } catch (error) {
-      console.error('❌ authService.telegramAuth: Ошибка:', error)
-      throw error
+    // Если уже есть активный запрос авторизации, возвращаем его
+    if (this._authInProgress && this._authPromise) {
+      console.log('⚠️ authService.telegramAuth: Уже есть активный запрос авторизации, возвращаем существующий')
+      return this._authPromise
     }
+    
+    // Создаем новый запрос
+    this._authInProgress = true
+    this._authPromise = this._performTelegramAuth(data)
+    
+    try {
+      const result = await this._authPromise
+      return result
+    } finally {
+      // Сбрасываем флаги после завершения
+      this._authInProgress = false
+      this._authPromise = null
+    }
+  },
+
+  async _performTelegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
+    const maxRetries = 3
+    const baseDelay = 1000 // 1 секунда
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await api.post('/auth/telegram', data)
+        console.log('✅ authService.telegramAuth: Ответ получен:', response.data)
+        return response.data
+      } catch (error: any) {
+        console.error(`❌ authService.telegramAuth: Попытка ${attempt}/${maxRetries} - Ошибка:`, error)
+        
+        // Если это ошибка 429 (Too Many Requests), ждем и повторяем
+        if (error.response?.status === 429 && attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt - 1) // Экспоненциальная задержка
+          console.log(`⏳ authService.telegramAuth: Ожидаем ${delay}ms перед повтором...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        
+        // Для других ошибок или последней попытки - выбрасываем ошибку
+        throw error
+      }
+    }
+    
+    // Этот код не должен выполняться, но на всякий случай
+    throw new Error('Превышено максимальное количество попыток авторизации')
   },
 
   async getProfile(token: string): Promise<UserProfile> {
@@ -113,4 +156,9 @@ export const authService = {
     const response = await api.post('/auth/google/url')
     return response.data
   }
+}
+
+// Экспортируем в глобальную область видимости для отладки
+if (typeof window !== 'undefined') {
+  (window as any).authService = authService
 } 

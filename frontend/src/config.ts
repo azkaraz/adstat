@@ -1,7 +1,7 @@
 // Конфигурация для разных окружений
 const environment = import.meta.env.MODE || 'development'
 export const API_BASE_URL = environment === 'production'
-  ? 'https://azkaraz.github.io/adstat' // Адрес для GitHub Pages
+  ? 'https://005a-185-161-251-62.ngrok-free.app' // Адрес бэкенда для продакшена
   : 'https://005a-185-161-251-62.ngrok-free.app' // Адрес для разработки через ngrok
 
 // Telegram Bot Token (должен быть в .env файле)
