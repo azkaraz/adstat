@@ -226,7 +226,12 @@ export const authService = {
   },
 
   async googleAuthCallback(code: string): Promise<{ message: string }> {
-    const response = await api.post('/auth/google/callback', { code })
+    const token = localStorage.getItem('token')
+    const response = await api.post('/auth/google/callback', { code }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
     return response.data
   },
 
