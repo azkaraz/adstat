@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Google Sheets
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
+    GOOGLE_REDIRECT_URI: str = "https://azkaraz.github.io/adstat/google-oauth-callback"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
