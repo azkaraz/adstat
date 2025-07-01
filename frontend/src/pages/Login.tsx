@@ -62,7 +62,7 @@ const Login: React.FC = () => {
           initData: tg.initData
         }
         console.log('Telegram WebApp auth data:', telegramData)
-        return login(telegramData).then(() => navigate('/'))
+        return login(telegramData)
       } else {
         console.log('No user data in Telegram WebApp')
       }
@@ -95,7 +95,7 @@ const Login: React.FC = () => {
       }
       
       console.log('URL params auth data:', telegramData)
-      return login(telegramData).then(() => navigate('/'))
+      return login(telegramData)
     }
     
     console.log('No valid URL parameters found')
@@ -176,7 +176,7 @@ const Login: React.FC = () => {
       }
       
       console.log('Using mock data for testing:', mockData)
-      await login(mockData).then(() => navigate('/'))
+      await login(mockData)
     } catch (error) {
       console.error('Manual login error:', error)
       if (error instanceof Error) {
@@ -192,6 +192,13 @@ const Login: React.FC = () => {
       }
     }
   }
+
+  // Редиректим на Дашборд, когда user появился
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
 
   if (loading) {
     return (
