@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { authService } from '../services/authService'
 
 const TestAuth: React.FC = () => {
-  const { user, token, login } = useAuth()
+  const { user, token } = useAuth()
   const [telegramData, setTelegramData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
