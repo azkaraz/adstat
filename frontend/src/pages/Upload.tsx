@@ -79,20 +79,22 @@ const Upload: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Загрузка отчета</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Загрузка отчета
+        </h1>
+        <p className="mt-2 text-gray-600 text-sm sm:text-base">
           Загрузите Excel файл с рекламными данными для обработки
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-8">
+      <div className="bg-white shadow rounded-lg p-4 sm:p-8">
         <div className="mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-2">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
             Требования к файлу:
           </h2>
-          <ul className="list-disc list-inside text-gray-600 space-y-1">
+          <ul className="list-disc list-inside text-gray-600 space-y-1 text-sm sm:text-base">
             <li>Формат: .xlsx или .xls</li>
             <li>Максимальный размер: 10MB</li>
             <li>Обязательные колонки: Дата, Кампания, Показы, Клики, Расходы</li>
@@ -102,7 +104,7 @@ const Upload: React.FC = () => {
 
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-lg p-6 sm:p-12 text-center cursor-pointer transition-colors ${
             isDragActive
               ? 'border-blue-400 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
@@ -111,9 +113,9 @@ const Upload: React.FC = () => {
           <input {...getInputProps()} />
           
           <div className="space-y-4">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center">
               <svg
-                className="w-8 h-8 text-gray-400"
+                className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -128,12 +130,12 @@ const Upload: React.FC = () => {
             </div>
             
             <div>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="text-base sm:text-lg font-medium text-gray-900">
                 {isDragActive
                   ? 'Отпустите файл здесь'
                   : 'Перетащите файл сюда или нажмите для выбора'}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Поддерживаются только файлы Excel
               </p>
             </div>

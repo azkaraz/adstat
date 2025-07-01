@@ -112,15 +112,17 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Профиль пользователя</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Профиль пользователя
+        </h1>
+        <p className="mt-2 text-gray-600 text-sm sm:text-base">
           Управляйте настройками вашего аккаунта
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
         {/* Информация о пользователе */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
