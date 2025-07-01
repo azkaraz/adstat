@@ -15,10 +15,10 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-800">
+        <div className="flex justify-between items-center h-16 w-full">
+          <div className="flex items-center flex-shrink-0">
+            <Link to="/" className="flex items-center">
+              <h1 className="font-bold text-gray-800 text-lg sm:text-xl truncate max-w-[160px] sm:max-w-none">
                 Ads Statistics Dashboard
               </h1>
             </Link>
