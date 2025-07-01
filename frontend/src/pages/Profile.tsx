@@ -7,7 +7,6 @@ const Profile: React.FC = () => {
   const { user, token } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
-  const [sheetId, setSheetId] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [googleLinked, setGoogleLinked] = useState(false)
@@ -20,7 +19,6 @@ const Profile: React.FC = () => {
       navigate('/login')
       return
     }
-    
     setEmail(user.email || '')
     setGoogleLinked(!!user.has_google_sheet)
     if (user.has_google_sheet) {
@@ -42,10 +40,8 @@ const Profile: React.FC = () => {
 
   const handleUpdateEmail = async () => {
     if (!email.trim()) return
-
     setLoading(true)
     setMessage('')
-
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
@@ -55,7 +51,6 @@ const Profile: React.FC = () => {
         },
         body: JSON.stringify({ email })
       })
-
       if (response.ok) {
         setMessage('Email успешно обновлен')
       } else {
@@ -109,36 +104,7 @@ const Profile: React.FC = () => {
     }
   }
 
-  const handleDisconnectSheet = async () => {
-    setLoading(true)
-    setMessage('')
-
-    try {
-      const response = await fetch('/api/sheets/disconnect', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (response.ok) {
-        setMessage('Google таблица отключена')
-        // Обновляем страницу для отображения нового статуса
-        window.location.reload()
-      } else {
-        const error = await response.json()
-        setMessage(`Ошибка: ${error.detail}`)
-      }
-    } catch (error) {
-      setMessage(`Ошибка: ${error}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4">
@@ -150,14 +116,12 @@ const Profile: React.FC = () => {
           Управляйте настройками вашего аккаунта
         </p>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
         {/* Информация о пользователе */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Информация о пользователе
           </h2>
-          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -165,7 +129,6 @@ const Profile: React.FC = () => {
               </label>
               <p className="mt-1 text-sm text-gray-900">{user.telegram_id}</p>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Имя
@@ -174,7 +137,6 @@ const Profile: React.FC = () => {
                 {user.first_name} {user.last_name}
               </p>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Username
@@ -183,7 +145,6 @@ const Profile: React.FC = () => {
                 @{user.username || 'Не указан'}
               </p>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Email
@@ -207,13 +168,11 @@ const Profile: React.FC = () => {
             </div>
           </div>
         </div>
-
         {/* Google Sheets */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Google Sheets
           </h2>
-          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -229,7 +188,6 @@ const Profile: React.FC = () => {
                 </span>
               </p>
             </div>
-            
             {!googleLinked ? (
               <button
                 onClick={handleGoogleLink}
@@ -271,7 +229,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-
       {message && (
         <div className={`mt-6 p-4 rounded-md ${
           message.includes('Ошибка')
