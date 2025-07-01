@@ -23,8 +23,7 @@ def get_google_auth_url() -> str:
         )
         auth_url, _ = flow.authorization_url(
             access_type='offline',
-            include_granted_scopes='true',
-            redirect_uri=settings.GOOGLE_REDIRECT_URI
+            include_granted_scopes='true'
         )
         return auth_url
     except FileNotFoundError:
