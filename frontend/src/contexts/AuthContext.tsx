@@ -60,7 +60,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (telegramData: any) => {
     try {
-      console.log('Starting login with telegram data:', telegramData)
+      console.log('🔍 AuthContext.login: Начинаем авторизацию')
+      console.log('📊 AuthContext.login: Полученные данные:', telegramData)
+      console.log('📊 AuthContext.login: Тип данных:', typeof telegramData)
+      console.log('📊 AuthContext.login: Ключи:', Object.keys(telegramData || {}))
+      console.log('📊 AuthContext.login: initData присутствует:', !!telegramData?.initData)
+      
       setLoading(true)
       
       let response
@@ -68,23 +73,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Проверяем формат данных
       if (telegramData.initData) {
         // Новый формат с initData
-        console.log('Using WebApp auth with initData')
+        console.log('✅ AuthContext.login: Используем WebApp auth с initData')
         response = await authService.telegramWebAppAuth({ initData: telegramData.initData })
       } else {
         // Старый формат с объектом данных
-        console.log('Using legacy auth with telegram data object')
+        console.log('⚠️ AuthContext.login: Используем legacy auth с объектом данных')
         response = await authService.telegramAuth(telegramData)
       }
       
-      console.log('Login successful:', response)
+      console.log('✅ AuthContext.login: Авторизация успешна:', response)
       
       setToken(response.access_token)
       setUser(response.user)
       localStorage.setItem('token', response.access_token)
       
-      console.log('User logged in successfully:', response.user)
+      console.log('✅ AuthContext.login: Пользователь авторизован:', response.user)
     } catch (error) {
-      console.error('Ошибка авторизации:', error)
+      console.error('❌ AuthContext.login: Ошибка авторизации:', error)
       setLoading(false)
       throw error
     } finally {

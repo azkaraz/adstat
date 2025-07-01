@@ -26,7 +26,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:8000", 
         "https://azkaraz.github.io",
-        "https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app",
+        "https://8858-62-133-61-2.ngrok-free.app",
         "*"  # Временно разрешаем все домены для тестирования
     ],
     allow_credentials=True,

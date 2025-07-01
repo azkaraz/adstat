@@ -2,7 +2,7 @@ import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 
 // Базовый URL API - используем ngrok URL как в приложении
-const API_BASE_URL = 'https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app'
+const API_BASE_URL = 'https://8858-62-133-61-2.ngrok-free.app'
 
 // Моки для API эндпоинтов
 export const handlers = [

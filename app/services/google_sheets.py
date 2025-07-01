@@ -206,4 +206,18 @@ async def read_data_from_sheet(sheet_id: str, range_name: str, user: User) -> li
     except HttpError as error:
         raise Exception(f"Ошибка чтения данных: {error}")
     except Exception as e:
-        raise Exception(f"Ошибка чтения: {str(e)}") 
+        raise Exception(f"Ошибка чтения: {str(e)}")
+
+def get_user_spreadsheets(user: User) -> list:
+    """
+    Получить список Google-таблиц пользователя через Google Drive API
+    """
+    creds = get_credentials(user)
+    service = build('drive', 'v3', credentials=creds)
+    results = service.files().list(
+        q="mimeType='application/vnd.google-apps.spreadsheet' and trashed = false",
+        pageSize=100,
+        fields="files(id, name)"
+    ).execute()
+    files = results.get('files', [])
+    return files 

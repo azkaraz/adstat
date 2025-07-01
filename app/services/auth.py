@@ -56,36 +56,27 @@ def verify_token(token: str):
 
 def verify_telegram_auth(telegram_data: dict) -> bool:
     """Проверить подпись от Telegram"""
-    print(f"DEBUG: verify_telegram_auth called with data: {telegram_data}")
-    print(f"DEBUG: TELEGRAM_BOT_TOKEN configured: {bool(settings.TELEGRAM_BOT_TOKEN)}")
-    
     # Проверяем, является ли это тестовыми данными
     if telegram_data.get('hash') == 'mock_hash':
-        print("DEBUG: Detected mock data, allowing auth for testing")
         return True
     
     if not settings.TELEGRAM_BOT_TOKEN:
-        print("DEBUG: No bot token configured, skipping verification")
         return True  # В режиме разработки пропускаем проверку
     
     # Получаем hash из данных
     received_hash = telegram_data.get('hash', '')
     if not received_hash:
-        print("DEBUG: No hash provided")
         return False
     
     # Если hash пришел как initData (URL-encoded строка), парсим её
     if '=' in received_hash and '&' in received_hash:
-        print("DEBUG: Parsing initData string")
         try:
             from urllib.parse import parse_qs, unquote
             # Декодируем URL-encoded строку
             decoded_data = unquote(received_hash)
-            print(f"DEBUG: Decoded initData: {decoded_data}")
             
             # Парсим параметры
             params = parse_qs(decoded_data)
-            print(f"DEBUG: Parsed params: {params}")
             
             # Создаем словарь с данными
             data_dict = {}
@@ -95,8 +86,6 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             
             # Извлекаем hash
             received_hash = data_dict.pop('hash', '') or ''
-            print(f"DEBUG: Extracted hash: {received_hash}")
-            print(f"DEBUG: Parsed data: {data_dict}")
             
             # Создаем строку для проверки (без hash и signature)
             # Telegram использует только определенные поля для подписи
@@ -106,12 +95,7 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
                 f"{k}={v}" for k, v in sorted(data_dict.items())
                 if k not in fields_to_exclude
             ])
-            
-            print(f"DEBUG: Sorted keys: {sorted([k for k in data_dict.keys() if k not in fields_to_exclude])}")
-            print(f"DEBUG: Data check string: {data_check_string}")
-            print(f"DEBUG: Data check string bytes: {data_check_string.encode('utf-8')}")
         except Exception as e:
-            print(f"DEBUG: Error parsing initData: {e}")
             return False
     else:
         # Обычный случай - hash пришел отдельно
@@ -121,9 +105,6 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             f"{k}={v}" for k, v in sorted(telegram_data.items()) 
             if k not in fields_to_exclude
         ])
-        
-        print(f"DEBUG: Regular case - sorted keys: {sorted([k for k in telegram_data.keys() if k not in fields_to_exclude])}")
-        print(f"DEBUG: Regular case - data check string: {data_check_string}")
     
     # Правильная реализация проверки подписи Telegram
     try:
@@ -141,15 +122,9 @@ def verify_telegram_auth(telegram_data: dict) -> bool:
             hashlib.sha256
         ).hexdigest()
         
-        print(f"DEBUG: Secret key (first 16 bytes): {secret_key[:16].hex()}")
-        print(f"DEBUG: Computed hash: {computed_hash}")
-        print(f"DEBUG: Received hash: {received_hash}")
-        print(f"DEBUG: Hashes match: {computed_hash == received_hash}")
-        
         return computed_hash == received_hash
         
     except Exception as e:
-        print(f"DEBUG: Error during signature verification: {e}")
         return False
 
 def get_current_user(

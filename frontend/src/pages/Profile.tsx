@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { authService } from '../services/authService'
 
 const Profile: React.FC = () => {
   const { user, token } = useAuth()
@@ -9,6 +10,10 @@ const Profile: React.FC = () => {
   const [sheetId, setSheetId] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [googleLinked, setGoogleLinked] = useState(false)
+  const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
+  const [selectedSheetId, setSelectedSheetId] = useState('')
+  const [loadingSheets, setLoadingSheets] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -17,7 +22,23 @@ const Profile: React.FC = () => {
     }
     
     setEmail(user.email || '')
+    setGoogleLinked(!!user.has_google_sheet)
+    if (user.has_google_sheet) {
+      fetchSpreadsheets()
+    }
   }, [user, navigate])
+
+  const fetchSpreadsheets = async () => {
+    setLoadingSheets(true)
+    try {
+      const res = await authService.getGoogleSpreadsheets()
+      setSpreadsheets(res.spreadsheets)
+    } catch (e) {
+      setMessage('Ошибка загрузки таблиц Google')
+    } finally {
+      setLoadingSheets(false)
+    }
+  }
 
   const handleUpdateEmail = async () => {
     if (!email.trim()) return
@@ -48,12 +69,23 @@ const Profile: React.FC = () => {
     }
   }
 
-  const handleConnectSheet = async () => {
-    if (!sheetId.trim()) return
-
+  const handleGoogleLink = async () => {
     setLoading(true)
     setMessage('')
+    try {
+      const res = await authService.getGoogleAuthUrl()
+      window.location.href = res.auth_url
+    } catch (e) {
+      setMessage('Ошибка получения ссылки Google OAuth')
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  const handleConnectSheet = async () => {
+    if (!selectedSheetId) return
+    setLoading(true)
+    setMessage('')
     try {
       const response = await fetch('/api/sheets/connect', {
         method: 'POST',
@@ -61,13 +93,10 @@ const Profile: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ sheet_id: sheetId })
+        body: JSON.stringify({ sheet_id: selectedSheetId })
       })
-
       if (response.ok) {
         setMessage('Google таблица успешно подключена')
-        setSheetId('')
-        // Обновляем страницу для отображения нового статуса
         window.location.reload()
       } else {
         const error = await response.json()
@@ -192,48 +221,52 @@ const Profile: React.FC = () => {
               </label>
               <p className="mt-1 text-sm">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  user.has_google_sheet
+                  googleLinked
                     ? 'text-green-800 bg-green-100'
                     : 'text-red-800 bg-red-100'
                 }`}>
-                  {user.has_google_sheet ? 'Подключена' : 'Не подключена'}
+                  {googleLinked ? 'Google-аккаунт привязан' : 'Не привязан'}
                 </span>
               </p>
             </div>
             
-            {!user.has_google_sheet ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  ID Google таблицы
-                </label>
-                <div className="mt-1 flex space-x-2">
-                  <input
-                    type="text"
-                    value={sheetId}
-                    onChange={(e) => setSheetId(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Введите ID таблицы"
-                  />
-                  <button
-                    onClick={handleConnectSheet}
-                    disabled={loading || !sheetId.trim()}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50"
-                  >
-                    {loading ? 'Подключение...' : 'Подключить'}
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  ID таблицы можно найти в URL: https://docs.google.com/spreadsheets/d/[ID]/edit
-                </p>
-              </div>
-            ) : (
+            {!googleLinked ? (
               <button
-                onClick={handleDisconnectSheet}
+                onClick={handleGoogleLink}
                 disabled={loading}
-                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50"
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
               >
-                {loading ? 'Отключение...' : 'Отключить Google таблицу'}
+                {loading ? 'Переход...' : 'Привязать Google-аккаунт'}
               </button>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Выберите Google таблицу
+                  </label>
+                  {loadingSheets ? (
+                    <div className="text-sm text-gray-500">Загрузка таблиц...</div>
+                  ) : (
+                    <select
+                      value={selectedSheetId}
+                      onChange={e => setSelectedSheetId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">-- Выберите таблицу --</option>
+                      {spreadsheets.map(sheet => (
+                        <option key={sheet.id} value={sheet.id}>{sheet.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                <button
+                  onClick={handleConnectSheet}
+                  disabled={loading || !selectedSheetId}
+                  className="w-full mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50"
+                >
+                  {loading ? 'Подключение...' : 'Подключить выбранную таблицу'}
+                </button>
+              </>
             )}
           </div>
         </div>

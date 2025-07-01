@@ -87,7 +87,7 @@ export const authService = {
   _authPromise: null as Promise<AuthResponse> | null,
 
   async telegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
-    console.log('🔍 authService.telegramAuth: Начинаем авторизацию')
+    console.log('🔍 authService.telegramAuth: Начинаем LEGACY авторизацию')
     console.log('📤 authService.telegramAuth: Отправляем данные:', data)
     console.log('🌐 authService.telegramAuth: URL:', `${API_BASE_URL}/auth/telegram`)
     
@@ -112,7 +112,7 @@ export const authService = {
   },
 
   async telegramWebAppAuth(data: TelegramWebAppAuthData): Promise<AuthResponse> {
-    console.log('🔍 authService.telegramWebAppAuth: Начинаем WebApp авторизацию')
+    console.log('🔍 authService.telegramWebAppAuth: Начинаем WEBAPP авторизацию')
     console.log('📤 authService.telegramWebAppAuth: Отправляем initData:', data.initData)
     console.log('🌐 authService.telegramWebAppAuth: URL:', `${API_BASE_URL}/auth/web-app/auth/telegram`)
     
@@ -222,6 +222,16 @@ export const authService = {
 
   async getGoogleAuthUrl(): Promise<{ auth_url: string }> {
     const response = await api.post('/auth/google/url')
+    return response.data
+  },
+
+  async googleAuthCallback(code: string): Promise<{ message: string }> {
+    const response = await api.post('/auth/google/callback', { code })
+    return response.data
+  },
+
+  async getGoogleSpreadsheets(): Promise<{ spreadsheets: { id: string, name: string }[] }> {
+    const response = await api.get('/auth/google/spreadsheets')
     return response.data
   }
 }

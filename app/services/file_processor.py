@@ -2,14 +2,11 @@ import pandas as pd
 import asyncio
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-import logging
 
 from app.core.database import SessionLocal
 from app.models.report import Report
 from app.models.user import User
 from app.services.google_sheets import append_data_to_sheet
-
-logger = logging.getLogger(__name__)
 
 async def process_excel_file(report_id: int, file_path: str, user: User):
     """
@@ -20,11 +17,10 @@ async def process_excel_file(report_id: int, file_path: str, user: User):
     try:
         # Обновляем статус на "processing"
         report = db.query(Report).filter(Report.id == report_id).first()
-        if not report:
-            logger.error(f"Отчет {report_id} не найден")
+        if report is None:
             return
         
-        report.status = "processing"
+        setattr(report, 'status', 'processing')
         db.commit()
         
         # Читаем Excel файл
@@ -34,34 +30,30 @@ async def process_excel_file(report_id: int, file_path: str, user: User):
         data = [df.columns.tolist()] + df.values.tolist()
         
         # Проверяем, подключена ли Google таблица
-        if not user.google_sheet_id:
-            report.status = "error"
-            report.error_message = "Google таблица не подключена"
+        if not getattr(user, 'google_sheet_id', None):
+            setattr(report, 'status', 'error')
+            setattr(report, 'error_message', 'Google таблица не подключена')
             db.commit()
             return
         
         # Добавляем данные в Google Sheets
         result = await append_data_to_sheet(
-            user.google_sheet_id,
+            str(user.google_sheet_id),
             "A1",  # Начинаем с первой ячейки
             data,
             user
         )
         
         # Обновляем статус на "completed"
-        report.status = "completed"
+        setattr(report, 'status', 'completed')
         db.commit()
         
-        logger.info(f"Отчет {report_id} успешно обработан. Добавлено {result['updated_rows']} строк")
-        
     except Exception as e:
-        logger.error(f"Ошибка обработки отчета {report_id}: {str(e)}")
-        
         # Обновляем статус на "error"
         report = db.query(Report).filter(Report.id == report_id).first()
-        if report:
-            report.status = "error"
-            report.error_message = str(e)
+        if report is not None:
+            setattr(report, 'status', 'error')
+            setattr(report, 'error_message', str(e))
             db.commit()
     
     finally:

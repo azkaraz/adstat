@@ -9,6 +9,7 @@ import Upload from './pages/Upload'
 import TestAuth from './pages/TestAuth'
 import TestTelegramWebApp from './pages/TestTelegramWebApp'
 import DebugInfo from './components/DebugInfo'
+import GoogleOAuthCallback from './pages/GoogleOAuthCallback'
 import './App.css'
 
 // Определяем базовый путь для GitHub Pages
@@ -254,6 +255,7 @@ function App() {
               <Route path="/upload" element={<Upload />} />
               <Route path="/test" element={<TestAuth />} />
               <Route path="/test-telegram-web-app" element={<TestTelegramWebApp />} />
+              <Route path="/google-oauth-callback" element={<GoogleOAuthCallback />} />
             </Routes>
           </main>
           <DebugInfo />
