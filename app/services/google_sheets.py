@@ -19,10 +19,12 @@ def get_google_auth_url() -> str:
     """
     try:
         flow = InstalledAppFlow.from_client_secrets_file(
-            'credentials.json', SCOPES)
+            'credentials.json', SCOPES, redirect_uri=settings.GOOGLE_REDIRECT_URI
+        )
         auth_url, _ = flow.authorization_url(
             access_type='offline',
-            include_granted_scopes='true'
+            include_granted_scopes='true',
+            redirect_uri=settings.GOOGLE_REDIRECT_URI
         )
         return auth_url
     except FileNotFoundError:
@@ -35,9 +37,9 @@ def exchange_code_for_tokens(code: str) -> Dict[str, str]:
     """
     try:
         flow = InstalledAppFlow.from_client_secrets_file(
-            'credentials.json', SCOPES)
+            'credentials.json', SCOPES, redirect_uri=settings.GOOGLE_REDIRECT_URI
+        )
         flow.fetch_token(code=code)
-        
         return {
             'access_token': flow.credentials.token,
             'refresh_token': flow.credentials.refresh_token
