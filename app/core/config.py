@@ -38,7 +38,7 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "http://localhost:8000",
         "https://azkaraz.github.io",
-        "https://9e38-185-161-251-62.ngrok-free.app"
+        "https://458f-2a12-5940-a96b-00-2.ngrok-free.app"
     ]
     
     # Загрузка файлов
