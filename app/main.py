@@ -23,14 +23,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:8000", 
-        "https://azkaraz.github.io",
-        "https://9e38-185-161-251-62.ngrok-free.app",
-        "*"  # Временно разрешаем все домены для тестирования
+        "https://azkaraz.github.io",  # GitHub Pages (без /adstat)
+        "https://e73b-2a12-5940-a96b-00-2.ngrok-free.app"  # Новый ngrok backend
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
 )
