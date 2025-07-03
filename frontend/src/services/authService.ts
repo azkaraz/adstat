@@ -89,7 +89,7 @@ export const authService = {
   async telegramAuth(data: TelegramAuthData): Promise<AuthResponse> {
     console.log('🔍 authService.telegramAuth: Начинаем LEGACY авторизацию')
     console.log('📤 authService.telegramAuth: Отправляем данные:', data)
-    console.log('🌐 authService.telegramAuth: URL:', `${API_BASE_URL}/auth/telegram`)
+    console.log('🌐 authService.telegramAuth: URL:', `${API_BASE_URL}/api/auth/telegram`)
     
     // Если уже есть активный запрос авторизации, возвращаем его
     if (this._authInProgress && this._authPromise) {
@@ -114,7 +114,7 @@ export const authService = {
   async telegramWebAppAuth(data: TelegramWebAppAuthData): Promise<AuthResponse> {
     console.log('🔍 authService.telegramWebAppAuth: Начинаем WEBAPP авторизацию')
     console.log('📤 authService.telegramWebAppAuth: Отправляем initData:', data.initData)
-    console.log('🌐 authService.telegramWebAppAuth: URL:', `${API_BASE_URL}/auth/web-app/auth/telegram`)
+    console.log('🌐 authService.telegramWebAppAuth: URL:', `${API_BASE_URL}/api/auth/web-app/auth/telegram`)
     
     // Если уже есть активный запрос авторизации, возвращаем его
     if (this._authInProgress && this._authPromise) {

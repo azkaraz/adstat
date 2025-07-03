@@ -53,7 +53,7 @@ describe('AuthService', () => {
 
       const result = await loginWithTelegram(telegramData)
 
-      expect(axios.post).toHaveBeenCalledWith('/auth/telegram', telegramData)
+      expect(axios.post).toHaveBeenCalledWith('/api/auth/telegram', telegramData)
       expect(result).toEqual(mockResponse.data)
     })
 
