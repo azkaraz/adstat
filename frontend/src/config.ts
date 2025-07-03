@@ -1,7 +1,7 @@
 // Конфигурация для разных окружений
 const environment = import.meta.env.MODE || 'development'
 export const API_BASE_URL = environment === 'production'
-  ? 'https://458f-2a12-5940-a96b-00-2.ngrok-free.app'
+  ? 'https://adstat.onrender.com'
   : 'http://localhost:8000' // Локальный адрес для разработки
 
 // Telegram Bot Token (должен быть в .env файле)
