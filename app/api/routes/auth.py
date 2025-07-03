@@ -175,11 +175,15 @@ async def vk_auth_callback(
     """
     try:
         code = data.code
+        logger.info(f"VK CALLBACK: code={code}")
         tokens = exchange_vk_code_for_tokens(code)
+        logger.info(f"VK CALLBACK: tokens={tokens}")
         # Сохраняем токены для пользователя
         current_user.vk_access_token = tokens['access_token']
         current_user.vk_refresh_token = tokens.get('refresh_token', '')
         db.commit()
+        db.refresh(current_user)
+        logger.info(f"VK CALLBACK: user.vk_access_token={current_user.vk_access_token}")
         # Создаём новый access_token для пользователя
         access_token = create_access_token(data={"sub": str(current_user.id)})
         return {
@@ -197,6 +201,7 @@ async def vk_auth_callback(
             }
         }
     except Exception as e:
+        logger.error(f"VK CALLBACK ERROR: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка VK авторизации: {str(e)}"
@@ -227,7 +232,7 @@ def validate(hash_str, init_data, token, c_str="WebAppData"):
 
     return data_check.hexdigest() == hash_str
 
-@router.post("/web-app/auth/telegram")
+@router.post("/auth/telegram")
 async def auth_telegram(data: Dict[str, Any]):
 
     init_data_str = data.get("initData")
