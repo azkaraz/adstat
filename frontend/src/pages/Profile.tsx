@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
+import { sheetsService } from '../services/sheetsService'
+import { ROUTES, API_ROUTES } from '../config'
 
 const Profile: React.FC = () => {
   const { user, token } = useAuth()
@@ -10,18 +12,20 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [googleLinked, setGoogleLinked] = useState(false)
+  const [vkLinked, setVkLinked] = useState(false)
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
 
   useEffect(() => {
     if (!user) {
-      navigate('/login')
+      navigate(ROUTES.LOGIN)
       return
     }
     setEmail(user.email || '')
-    setGoogleLinked(!!user.has_google_sheet)
-    if (user.has_google_sheet) {
+    setGoogleLinked(!!user.has_google_account || !!user.has_google_sheet)
+    setVkLinked(!!user.has_vk_account)
+    if (user.has_google_account || user.has_google_sheet) {
       fetchSpreadsheets()
     }
   }, [user, navigate])
@@ -43,7 +47,7 @@ const Profile: React.FC = () => {
     setLoading(true)
     setMessage('')
     try {
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch(API_ROUTES.USER_PROFILE, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -82,23 +86,46 @@ const Profile: React.FC = () => {
     setLoading(true)
     setMessage('')
     try {
-      const response = await fetch('/api/sheets/connect', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ sheet_id: selectedSheetId })
-      })
-      if (response.ok) {
-        setMessage('Google таблица успешно подключена')
-        window.location.reload()
+      const response = await sheetsService.connectGoogleSheet(selectedSheetId)
+      setMessage('Google таблица успешно подключена')
+      window.location.reload()
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.detail) {
+        setMessage(`Ошибка: ${error.response.data.detail}`)
       } else {
-        const error = await response.json()
-        setMessage(`Ошибка: ${error.detail}`)
+        setMessage(`Ошибка: ${error.message || error}`)
       }
-    } catch (error) {
-      setMessage(`Ошибка: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDisconnectGoogle = async () => {
+    setLoading(true)
+    setMessage('')
+    try {
+      const res = await sheetsService.disconnectGoogleAccount()
+      setMessage(res.message || 'Google-аккаунт успешно отключён')
+      window.location.reload()
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.detail) {
+        setMessage(`Ошибка: ${error.response.data.detail}`)
+      } else {
+        setMessage(`Ошибка: ${error.message || error}`)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVkLink = async () => {
+    setLoading(true)
+    setMessage('')
+    try {
+      const res = await authService.getVkAuthUrl()
+      window.location.href = res.auth_url
+    } catch (e) {
+      setMessage('Ошибка получения ссылки VK OAuth')
     } finally {
       setLoading(false)
     }
@@ -224,7 +251,45 @@ const Profile: React.FC = () => {
                 >
                   {loading ? 'Подключение...' : 'Подключить выбранную таблицу'}
                 </button>
+                <button
+                  onClick={handleDisconnectGoogle}
+                  disabled={loading}
+                  className="w-full mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50"
+                >
+                  {loading ? 'Отключение...' : 'Отключить Google-аккаунт'}
+                </button>
               </>
+            )}
+          </div>
+        </div>
+        {/* VK Ads */}
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            VK Реклама
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Статус подключения
+              </label>
+              <p className="mt-1 text-sm">
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                  vkLinked
+                    ? 'text-green-800 bg-green-100'
+                    : 'text-red-800 bg-red-100'
+                }`}>
+                  {vkLinked ? 'VK-аккаунт привязан' : 'Не привязан'}
+                </span>
+              </p>
+            </div>
+            {!vkLinked && (
+              <button
+                onClick={handleVkLink}
+                disabled={loading}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+              >
+                {loading ? 'Переход...' : 'Привязать VK-аккаунт'}
+              </button>
             )}
           </div>
         </div>

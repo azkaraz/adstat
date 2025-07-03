@@ -15,6 +15,8 @@ class User(BaseModel):
     google_access_token = Column(Text)
     google_refresh_token = Column(Text)
     google_sheet_id = Column(String)
+    vk_access_token = Column(Text)
+    vk_refresh_token = Column(Text)
 
     # Связь с отчетами
     reports = relationship("Report", back_populates="user")

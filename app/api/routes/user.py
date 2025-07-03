@@ -32,6 +32,7 @@ async def get_user_profile(
         "last_name": current_user.last_name,
         "email": current_user.email,
         "has_google_sheet": bool(current_user.google_sheet_id),
+        "has_google_account": bool(current_user.google_access_token),
         "created_at": current_user.created_at
     }
 

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { ROUTES } from '../config'
 
 const Login: React.FC = () => {
   const { user, login, loading } = useAuth()
@@ -110,7 +111,7 @@ const Login: React.FC = () => {
     
     if (user) {
       console.log('User already logged in, redirecting...')
-      navigate('/')
+      navigate(ROUTES.DASHBOARD)
       return
     }
 
@@ -196,7 +197,7 @@ const Login: React.FC = () => {
   // Редиректим на Дашборд, когда user появился
   useEffect(() => {
     if (user) {
-      navigate('/')
+      navigate(ROUTES.DASHBOARD)
     }
   }, [user, navigate])
 

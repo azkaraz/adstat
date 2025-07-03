@@ -7,7 +7,7 @@ const API_BASE_URL = 'https://9e38-185-161-251-62.ngrok-free.app'
 // Моки для API эндпоинтов
 export const handlers = [
   // Авторизация через Telegram
-  http.post(`${API_BASE_URL}/auth/telegram`, () => {
+  http.post(`${API_BASE_URL}/api/auth/telegram`, () => {
     return HttpResponse.json({
       access_token: 'test_jwt_token',
       user: {
@@ -23,7 +23,7 @@ export const handlers = [
   }),
 
   // Получение профиля пользователя
-  http.get(`${API_BASE_URL}/user/profile`, ({ request }) => {
+  http.get(`${API_BASE_URL}/api/user/profile`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -45,7 +45,7 @@ export const handlers = [
   }),
 
   // Обновление профиля
-  http.put(`${API_BASE_URL}/user/profile`, ({ request }) => {
+  http.put(`${API_BASE_URL}/api/user/profile`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -70,7 +70,7 @@ export const handlers = [
   }),
 
   // Получение отчетов пользователя
-  http.get(`${API_BASE_URL}/user/reports`, ({ request }) => {
+  http.get(`${API_BASE_URL}/api/user/reports`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -99,7 +99,7 @@ export const handlers = [
   }),
 
   // Загрузка отчета
-  http.post(`${API_BASE_URL}/upload/report`, ({ request }) => {
+  http.post(`${API_BASE_URL}/api/upload/report`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -118,7 +118,7 @@ export const handlers = [
   }),
 
   // Получение статуса отчета
-  http.get(`${API_BASE_URL}/upload/report/:id/status`, ({ request, params }) => {
+  http.get(`${API_BASE_URL}/api/upload/report/:id/status`, ({ request, params }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -140,7 +140,7 @@ export const handlers = [
   }),
 
   // Подключение Google таблицы
-  http.post(`${API_BASE_URL}/sheets/connect`, ({ request }) => {
+  http.post(`${API_BASE_URL}/api/sheets/connect`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -166,7 +166,7 @@ export const handlers = [
   }),
 
   // Получение информации о подключенной таблице
-  http.get(`${API_BASE_URL}/sheets/info`, ({ request }) => {
+  http.get(`${API_BASE_URL}/api/sheets/info`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -191,7 +191,7 @@ export const handlers = [
   }),
 
   // Отключение Google таблицы
-  http.delete(`${API_BASE_URL}/sheets/disconnect`, ({ request }) => {
+  http.delete(`${API_BASE_URL}/api/sheets/disconnect`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -207,7 +207,7 @@ export const handlers = [
   }),
 
   // Получение данных отчета
-  http.get(`${API_BASE_URL}/sheets/report/:id`, ({ request, params }) => {
+  http.get(`${API_BASE_URL}/api/sheets/report/:id`, ({ request, params }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -235,7 +235,7 @@ export const handlers = [
   }),
 
   // Запись данных в Google таблицу
-  http.post(`${API_BASE_URL}/sheets/write`, ({ request }) => {
+  http.post(`${API_BASE_URL}/api/sheets/write`, ({ request }) => {
     const authHeader = request.headers.get('Authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

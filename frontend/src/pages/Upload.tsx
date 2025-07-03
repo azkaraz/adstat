@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { ROUTES, API_ROUTES } from '../config'
 
 const Upload: React.FC = () => {
   const { user, token } = useAuth()
@@ -11,7 +12,7 @@ const Upload: React.FC = () => {
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!user) {
-      navigate('/login')
+      navigate(ROUTES.LOGIN)
       return
     }
 
@@ -38,7 +39,7 @@ const Upload: React.FC = () => {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('/api/upload/report', {
+      const response = await fetch(API_ROUTES.UPLOAD_REPORT, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -52,7 +53,7 @@ const Upload: React.FC = () => {
         
         // Перенаправляем на дашборд через 2 секунды
         setTimeout(() => {
-          navigate('/')
+          navigate(ROUTES.DASHBOARD)
         }, 2000)
       } else {
         const error = await response.json()
@@ -181,7 +182,7 @@ const Upload: React.FC = () => {
               </div>
               <div className="mt-4">
                 <button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => navigate(ROUTES.PROFILE)}
                   className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Подключить Google таблицу

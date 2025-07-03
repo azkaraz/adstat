@@ -35,11 +35,11 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-# Подключаем роуты
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(user.router, prefix="/user", tags=["user"])
-app.include_router(sheets.router, prefix="/sheets", tags=["sheets"])
-app.include_router(upload.router, prefix="/upload", tags=["upload"])
+# Подключаем роуты с префиксом /api
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(user.router, prefix="/api/user", tags=["user"])
+app.include_router(sheets.router, prefix="/api/sheets", tags=["sheets"])
+app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 
 # Подключаем статические файлы для фронтенда
 if os.path.exists("frontend/dist"):

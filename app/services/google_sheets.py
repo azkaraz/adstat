@@ -11,7 +11,11 @@ from app.models.user import User
 from app.core.config import settings
 
 # Если изменяете эти области, удалите файл token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+SCOPES = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive'  # Полный доступ к Google Drive (чтение/запись)
+]
 
 def get_google_auth_url() -> str:
     """
@@ -40,8 +44,8 @@ def exchange_code_for_tokens(code: str) -> Dict[str, str]:
         )
         flow.fetch_token(code=code)
         return {
-            'access_token': flow.credentials.token,
-            'refresh_token': flow.credentials.refresh_token
+            'access_token': str(flow.credentials.token or ''),
+            'refresh_token': str(flow.credentials.refresh_token or '')
         }
     except FileNotFoundError:
         # Для тестов возвращаем мок токены
@@ -50,14 +54,14 @@ def exchange_code_for_tokens(code: str) -> Dict[str, str]:
             'refresh_token': 'mock_refresh_token'
         }
 
-def get_credentials(user: User) -> Optional[Credentials]:
+def get_credentials(user: User) -> Any:
     """
     Получить учетные данные пользователя для Google Sheets API
     """
     creds = None
     
     # Проверяем, есть ли сохраненные токены
-    if user.google_access_token:
+    if getattr(user, 'google_access_token', None):
         creds = Credentials(
             token=user.google_access_token,
             refresh_token=user.google_refresh_token,
@@ -75,10 +79,11 @@ def get_credentials(user: User) -> Optional[Credentials]:
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        
-        # Сохраняем токены в базе данных
-        user.google_access_token = creds.token
-        user.google_refresh_token = creds.refresh_token
+        # Сохраняем токены в базе данных только если они не None
+        if getattr(creds, 'token', None):
+            setattr(user, 'google_access_token', str(creds.token))
+        if getattr(creds, 'refresh_token', None):
+            setattr(user, 'google_refresh_token', str(creds.refresh_token))
     
     return creds
 

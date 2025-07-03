@@ -8,12 +8,14 @@ import time
 from fastapi import Request
 from urllib.parse import parse_qs, unquote
 import logging
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.user import User
 from app.services.auth import create_access_token, verify_telegram_auth, get_current_user
 from app.services.google_sheets import get_google_auth_url, exchange_code_for_tokens, get_user_spreadsheets
+from app.services.vk_ads import get_vk_auth_url, exchange_vk_code_for_tokens
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -29,6 +31,12 @@ class HTTPBearer401(HTTPBearer):
             )
 
 security = HTTPBearer401()
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+
+class VKCallbackRequest(BaseModel):
+    code: str
 
 @router.post("/telegram")
 async def telegram_auth(
@@ -90,7 +98,8 @@ async def telegram_auth(
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
-                "has_google_sheet": bool(user.google_sheet_id)
+                "has_google_sheet": bool(user.google_sheet_id),
+                "has_vk_account": bool(getattr(user, 'vk_access_token', None))
             }
         }
         
@@ -110,7 +119,7 @@ def get_google_auth_url_route():
 
 @router.post("/google/callback")
 async def google_auth_callback(
-    code: str,
+    data: GoogleCallbackRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -118,6 +127,7 @@ async def google_auth_callback(
     Обработка callback от Google OAuth
     """
     try:
+        code = data.code
         tokens = exchange_code_for_tokens(code)
         # Сохраняем токены для пользователя
         current_user.google_access_token = tokens['access_token']
@@ -136,13 +146,60 @@ async def google_auth_callback(
                 "first_name": current_user.first_name,
                 "last_name": current_user.last_name,
                 "email": current_user.email,
-                "has_google_sheet": bool(current_user.google_sheet_id)
+                "has_google_sheet": bool(current_user.google_sheet_id),
+                "has_vk_account": bool(getattr(current_user, 'vk_access_token', None))
             }
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка Google авторизации: {str(e)}"
+        )
+
+@router.post("/vk/url")
+def get_vk_auth_url_route():
+    """
+    Получить URL для авторизации в VK
+    """
+    auth_url = get_vk_auth_url()
+    return {"auth_url": auth_url}
+
+@router.post("/vk/callback")
+async def vk_auth_callback(
+    data: VKCallbackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Обработка callback от VK OAuth
+    """
+    try:
+        code = data.code
+        tokens = exchange_vk_code_for_tokens(code)
+        # Сохраняем токены для пользователя
+        current_user.vk_access_token = tokens['access_token']
+        current_user.vk_refresh_token = tokens.get('refresh_token', '')
+        db.commit()
+        # Создаём новый access_token для пользователя
+        access_token = create_access_token(data={"sub": str(current_user.id)})
+        return {
+            "message": "VK авторизация успешна",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": current_user.id,
+                "telegram_id": current_user.telegram_id,
+                "username": current_user.username,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "email": current_user.email,
+                "has_vk_account": bool(current_user.vk_access_token)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка VK авторизации: {str(e)}"
         )
 
 def validate(hash_str, init_data, token, c_str="WebAppData"):

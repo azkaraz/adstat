@@ -140,7 +140,7 @@ describe('AuthService', () => {
       const sheetId = 'test_sheet_id'
       const result = await connectGoogleSheet(sheetId)
 
-      expect(axios.post).toHaveBeenCalledWith('/sheets/connect', { sheet_id: sheetId })
+      expect(axios.post).toHaveBeenCalledWith('/api/sheets/connect', { sheet_id: sheetId })
       expect(result).toEqual(mockResponse.data)
     })
 

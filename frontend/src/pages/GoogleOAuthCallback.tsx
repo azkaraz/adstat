@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { useAuth } from '../contexts/AuthContext'
+import { ROUTES } from '../config'
 
 const GoogleOAuthCallback: React.FC = () => {
   const navigate = useNavigate()
@@ -20,7 +21,7 @@ const GoogleOAuthCallback: React.FC = () => {
     authService.googleAuthCallback(code)
       .then(() => {
         // После успешной привязки обновляем профиль пользователя
-        window.location.href = '/profile'
+        window.location.href = ROUTES.PROFILE
       })
       .catch(() => {
         setStatus('error')

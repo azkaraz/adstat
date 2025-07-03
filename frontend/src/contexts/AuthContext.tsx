@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { authService } from '../services/authService'
 
-interface User {
+export interface User {
   id: number
   telegram_id: string
   username: string
@@ -9,6 +9,9 @@ interface User {
   last_name: string
   email?: string
   has_google_sheet: boolean
+  has_google_account?: boolean
+  has_vk_account?: boolean
+  created_at?: string
 }
 
 interface AuthContextType {

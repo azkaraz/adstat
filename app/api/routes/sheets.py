@@ -66,15 +66,28 @@ async def get_connected_sheet_info(
             detail=f"Ошибка получения информации о таблице: {str(e)}"
         )
 
-@router.delete("/disconnect")
+@router.delete("/disconnect", response_model=dict, status_code=200)
 async def disconnect_google_sheet(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Отключить Google таблицу
+    Отключить Google-аккаунт и таблицу пользователя.
     """
-    current_user.google_sheet_id = None
+    google_access_token = getattr(current_user, 'google_access_token', None)
+    google_sheet_id = getattr(current_user, 'google_sheet_id', None)
+    # Если вдруг это Column, а не значение, получаем значение из __dict__
+    if hasattr(google_access_token, 'type'):
+        google_access_token = current_user.__dict__.get('google_access_token')
+    if hasattr(google_sheet_id, 'type'):
+        google_sheet_id = current_user.__dict__.get('google_sheet_id')
+    if not google_access_token and not google_sheet_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google-аккаунт не был подключён"
+        )
+    setattr(current_user, 'google_sheet_id', '')
+    setattr(current_user, 'google_access_token', '')
+    setattr(current_user, 'google_refresh_token', '')
     db.commit()
-    
-    return {"message": "Google таблица отключена"} 
+    return {"success": True, "message": "Google-аккаунт и таблица успешно отключены"} 

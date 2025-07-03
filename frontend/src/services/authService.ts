@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_BASE_URL } from '../config'
+import { API_BASE_URL, API_ROUTES } from '../config'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -142,7 +142,7 @@ export const authService = {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await api.post('/auth/telegram', data)
+        const response = await api.post(API_ROUTES.AUTH_TELEGRAM, data)
         console.log('✅ authService.telegramAuth: Ответ получен:', response.data)
         return response.data
       } catch (error: any) {
@@ -171,7 +171,7 @@ export const authService = {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await api.post('/auth/web-app/auth/telegram', data)
+        const response = await api.post(API_ROUTES.AUTH_WEBAPP_TELEGRAM, data)
         console.log('✅ authService.telegramWebAppAuth: Ответ получен:', response.data)
         
         // Проверяем успешность авторизации
@@ -206,7 +206,7 @@ export const authService = {
 
   async getProfile(token: string): Promise<UserProfile> {
     console.log('🔍 authService.getProfile: Получаем профиль')
-    const response = await api.get('/user/profile', {
+    const response = await api.get(API_ROUTES.USER_PROFILE, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -216,18 +216,18 @@ export const authService = {
   },
 
   async updateProfile(email: string): Promise<{ message: string; user: Partial<UserProfile> }> {
-    const response = await api.put('/user/profile', { email })
+    const response = await api.put(API_ROUTES.USER_PROFILE, { email })
     return response.data
   },
 
   async getGoogleAuthUrl(): Promise<{ auth_url: string }> {
-    const response = await api.post('/auth/google/url')
+    const response = await api.post(API_ROUTES.AUTH_GOOGLE_URL)
     return response.data
   },
 
   async googleAuthCallback(code: string): Promise<{ message: string }> {
     const token = localStorage.getItem('token')
-    const response = await api.post('/auth/google/callback', { code }, {
+    const response = await api.post(API_ROUTES.AUTH_GOOGLE_CALLBACK, { code }, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -241,7 +241,25 @@ export const authService = {
   },
 
   async getGoogleSpreadsheets(): Promise<{ spreadsheets: { id: string, name: string }[] }> {
-    const response = await api.get('/auth/google/spreadsheets')
+    const response = await api.get(API_ROUTES.AUTH_GOOGLE_SPREADSHEETS)
+    return response.data
+  },
+
+  async getVkAuthUrl(): Promise<{ auth_url: string }> {
+    const response = await api.post(API_ROUTES.AUTH_VK_URL)
+    return response.data
+  },
+
+  async vkAuthCallback(code: string): Promise<{ message: string }> {
+    const token = localStorage.getItem('token')
+    const response = await api.post(API_ROUTES.AUTH_VK_CALLBACK, { code }, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    if (response.data.access_token) {
+      localStorage.setItem('token', response.data.access_token)
+    }
     return response.data
   }
 }
