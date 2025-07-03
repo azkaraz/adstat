@@ -8,8 +8,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
-    redis-server \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы зависимостей
@@ -27,8 +25,5 @@ RUN mkdir -p uploads
 # Открываем порт
 EXPOSE 8000
 
-# Копируем конфиг supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Команда для запуска всех сервисов через supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
+# Команда для запуска приложения
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
