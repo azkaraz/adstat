@@ -24,7 +24,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://azkaraz.github.io",  # GitHub Pages (без /adstat)
-        "https://e73b-2a12-5940-a96b-00-2.ngrok-free.app"  # Новый ngrok backend
+        "https://813d-2a12-5940-a96b-00-2.ngrok-free.app"  # Новый ngrok backend
     ],
     allow_credentials=True,
     allow_methods=["*"],
