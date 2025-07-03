@@ -232,6 +232,11 @@ export const authService = {
         Authorization: `Bearer ${token}`
       }
     })
+    // Если бэк вернул новый access_token, сохраняем его и обновляем профиль
+    if (response.data.access_token) {
+      localStorage.setItem('token', response.data.access_token)
+      // Можно также обновить профиль пользователя, если нужно
+    }
     return response.data
   },
 
