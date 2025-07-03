@@ -1,6 +1,6 @@
 // Конфигурация для разных окружений
 const environment = import.meta.env.MODE || 'development'
-export const API_BASE_URL = 'https://8858-62-133-61-2.ngrok-free.app' // Новый адрес бэкенда для всех окружений
+export const API_BASE_URL = 'https://9e38-185-161-251-62.ngrok-free.app' // Новый адрес бэкенда для всех окружений
 
 // Telegram Bot Token (должен быть в .env файле)
 export const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
