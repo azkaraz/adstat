@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
@@ -16,6 +16,7 @@ const Profile: React.FC = () => {
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
+  const vkidContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user) {
@@ -29,6 +30,46 @@ const Profile: React.FC = () => {
       fetchSpreadsheets()
     }
   }, [user, navigate])
+
+  // Встраиваем VKID OneTap виджет при монтировании, если не привязан VK
+  useEffect(() => {
+    // @ts-ignore
+    if (!vkLinked && window.VKIDSDK && vkidContainerRef.current) {
+      // @ts-ignore
+      const VKID = window.VKIDSDK
+      VKID.Config.init({
+        app: 53816386,
+        redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
+        responseMode: VKID.ConfigResponseMode.Callback,
+        source: VKID.ConfigSource.LOWCODE,
+        scope: '',
+      })
+      const oneTap = new VKID.OneTap()
+      oneTap.render({
+        container: vkidContainerRef.current,
+        showAlternativeLogin: true
+      })
+      .on(VKID.WidgetEvents.ERROR, vkidOnError)
+      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload: any) {
+        const code = payload.code
+        const deviceId = payload.device_id
+        VKID.Auth.exchangeCode(code, deviceId)
+          .then(vkidOnSuccess)
+          .catch(vkidOnError)
+      })
+    }
+    // eslint-disable-next-line
+  }, [vkLinked])
+
+  function vkidOnSuccess(data: any) {
+    // TODO: отправить данные на backend для привязки VK-аккаунта
+    setMessage('VK авторизация успешна!')
+    // Можно обновить профиль или вызвать window.location.reload()
+    window.location.reload()
+  }
+  function vkidOnError(error: any) {
+    setMessage('Ошибка VK авторизации: ' + (error?.message || error))
+  }
 
   const fetchSpreadsheets = async () => {
     setLoadingSheets(true)
@@ -283,13 +324,16 @@ const Profile: React.FC = () => {
               </p>
             </div>
             {!vkLinked && (
-              <button
-                onClick={handleVkLink}
-                disabled={loading}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
-              >
-                {loading ? 'Переход...' : 'Привязать VK-аккаунт'}
-              </button>
+              <>
+                <button
+                  onClick={handleVkLink}
+                  disabled={loading}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+                >
+                  {loading ? 'Переход...' : 'Привязать VK-аккаунт'}
+                </button>
+                <div ref={vkidContainerRef} className="mt-4" />
+              </>
             )}
           </div>
         </div>
