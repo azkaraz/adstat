@@ -31,44 +31,62 @@ const Profile: React.FC = () => {
     }
   }, [user, navigate])
 
-  // Встраиваем VKID OneTap виджет при монтировании, если не привязан VK
-  useEffect(() => {
-    // @ts-ignore
-    if (!vkLinked && window.VKIDSDK && vkidContainerRef.current) {
-      // @ts-ignore
-      const VKID = window.VKIDSDK
-      VKID.Config.init({
-        app: 53816386,
-        redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
-        responseMode: VKID.ConfigResponseMode.Callback,
-        source: VKID.ConfigSource.LOWCODE,
-        scope: '',
-      })
-      const oneTap = new VKID.OneTap()
-      oneTap.render({
-        container: vkidContainerRef.current,
-        showAlternativeLogin: true
-      })
-      .on(VKID.WidgetEvents.ERROR, vkidOnError)
-      .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload: any) {
-        const code = payload.code
-        const deviceId = payload.device_id
-        VKID.Auth.exchangeCode(code, deviceId)
-          .then(vkidOnSuccess)
-          .catch(vkidOnError)
-      })
+  // Функция для генерации случайной строки (state)
+  function generateRandomString(length = 43) {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+    let result = ''
+    const values = window.crypto.getRandomValues(new Uint8Array(length))
+    for (let i = 0; i < length; i++) {
+      result += charset[values[i] % charset.length]
     }
-    // eslint-disable-next-line
-  }, [vkLinked])
-
-  function vkidOnSuccess() {
-    // TODO: отправить данные на backend для привязки VK-аккаунта
-    setMessage('VK авторизация успешна!')
-    // Можно обновить профиль или вызвать window.location.reload()
-    window.location.reload()
+    return result
   }
-  function vkidOnError(error: any) {
-    setMessage('Ошибка VK авторизации: ' + (error?.message || error))
+
+  // Функция для base64url-encoding
+  function base64urlencode(str: ArrayBuffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(str)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+  }
+
+  // Генерация code_verifier и code_challenge
+  async function pkceChallengeFromVerifier(verifier: string) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(verifier)
+    const digest = await window.crypto.subtle.digest('SHA-256', data)
+    return base64urlencode(digest)
+  }
+
+  // Кастомная VK ID OAuth авторизация без SDK
+  const handleVkIdAuth = async () => {
+    setLoading(true)
+    setMessage('')
+    try {
+      const clientId = 53816386
+      const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
+      const scope = ''
+      const state = generateRandomString(32)
+      const codeVerifier = generateRandomString(64)
+      const codeChallenge = await pkceChallengeFromVerifier(codeVerifier)
+      // Сохраняем verifier и state для последующего обмена
+      sessionStorage.setItem('vk_code_verifier', codeVerifier)
+      sessionStorage.setItem('vk_state', state)
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: clientId.toString(),
+        redirect_uri: redirectUri,
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        scope
+      })
+      window.location.href = `https://id.vk.com/authorize?${params.toString()}`
+    } catch (e) {
+      setMessage('Ошибка VK ID авторизации')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchSpreadsheets = async () => {
@@ -154,19 +172,6 @@ const Profile: React.FC = () => {
       } else {
         setMessage(`Ошибка: ${error.message || error}`)
       }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVkLink = async () => {
-    setLoading(true)
-    setMessage('')
-    try {
-      const res = await authService.getVkAuthUrl()
-      window.location.href = res.auth_url
-    } catch (e) {
-      setMessage('Ошибка получения ссылки VK OAuth')
     } finally {
       setLoading(false)
     }
@@ -326,13 +331,12 @@ const Profile: React.FC = () => {
             {!vkLinked && (
               <>
                 <button
-                  onClick={handleVkLink}
+                  onClick={handleVkIdAuth}
                   disabled={loading}
                   className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
                 >
-                  {loading ? 'Переход...' : 'Привязать VK-аккаунт'}
+                  {loading ? 'Переход...' : 'Привязать VK-аккаунт через VK ID'}
                 </button>
-                <div ref={vkidContainerRef} className="mt-4" />
               </>
             )}
           </div>
