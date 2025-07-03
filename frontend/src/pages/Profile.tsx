@@ -61,7 +61,7 @@ const Profile: React.FC = () => {
     // eslint-disable-next-line
   }, [vkLinked])
 
-  function vkidOnSuccess(data: any) {
+  function vkidOnSuccess() {
     // TODO: отправить данные на backend для привязки VK-аккаунта
     setMessage('VK авторизация успешна!')
     // Можно обновить профиль или вызвать window.location.reload()
