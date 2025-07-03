@@ -123,7 +123,22 @@ async def google_auth_callback(
         current_user.google_access_token = tokens['access_token']
         current_user.google_refresh_token = tokens['refresh_token']
         db.commit()
-        return {"message": "Google авторизация успешна"}
+        # Создаём новый access_token для пользователя
+        access_token = create_access_token(data={"sub": str(current_user.id)})
+        return {
+            "message": "Google авторизация успешна",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": current_user.id,
+                "telegram_id": current_user.telegram_id,
+                "username": current_user.username,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "email": current_user.email,
+                "has_google_sheet": bool(current_user.google_sheet_id)
+            }
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

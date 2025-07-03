@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
+import { useAuth } from '../contexts/AuthContext'
 
 const GoogleOAuthCallback: React.FC = () => {
   const navigate = useNavigate()
+  // const { token, user } = useAuth() // удалено как неиспользуемое
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')
 
@@ -17,9 +19,8 @@ const GoogleOAuthCallback: React.FC = () => {
     }
     authService.googleAuthCallback(code)
       .then(() => {
-        setStatus('success')
-        setMessage('Google аккаунт успешно привязан!')
-        setTimeout(() => navigate('/profile'), 1500)
+        // После успешной привязки обновляем профиль пользователя
+        window.location.href = '/profile'
       })
       .catch(() => {
         setStatus('error')

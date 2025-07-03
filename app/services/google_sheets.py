@@ -207,7 +207,7 @@ async def read_data_from_sheet(sheet_id: str, range_name: str, user: User) -> li
     except HttpError as error:
         raise Exception(f"Ошибка чтения данных: {error}")
     except Exception as e:
-        raise Exception(f"Ошибка чтения: {str(e)}")
+        raise Exception(f"Ошибка чтения: {str(e)}") 
 
 def get_user_spreadsheets(user: User) -> list:
     """
