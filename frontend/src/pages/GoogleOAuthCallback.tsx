@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
-import { useAuth } from '../contexts/AuthContext'
 import { ROUTES } from '../config'
 
 const GoogleOAuthCallback: React.FC = () => {

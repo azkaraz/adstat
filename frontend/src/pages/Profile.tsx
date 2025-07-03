@@ -86,7 +86,7 @@ const Profile: React.FC = () => {
     setLoading(true)
     setMessage('')
     try {
-      const response = await sheetsService.connectGoogleSheet(selectedSheetId)
+      await sheetsService.connectGoogleSheet(selectedSheetId)
       setMessage('Google таблица успешно подключена')
       window.location.reload()
     } catch (error: any) {
