@@ -16,7 +16,6 @@ const Profile: React.FC = () => {
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
-  const vkidContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user) {
