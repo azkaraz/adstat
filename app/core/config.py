@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # VK
     VK_CLIENT_ID: str = ""
     VK_CLIENT_SECRET: str = ""
-    VK_REDIRECT_URI: str = "http://localhost:3000/vk-oauth-callback"
+    VK_REDIRECT_URI: str = "https://azkaraz.github.io/adstat/vk-oauth-callback"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
