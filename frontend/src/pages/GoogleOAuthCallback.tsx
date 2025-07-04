@@ -20,7 +20,7 @@ const GoogleOAuthCallback: React.FC = () => {
     authService.googleAuthCallback(code)
       .then(() => {
         // После успешной привязки обновляем профиль пользователя
-        window.location.href = ROUTES.PROFILE
+        navigate(ROUTES.PROFILE)
       })
       .catch(() => {
         setStatus('error')

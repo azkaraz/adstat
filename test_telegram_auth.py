@@ -8,7 +8,7 @@ import json
 import time
 
 # Конфигурация
-API_BASE_URL = "https://4fe4-2a12-5940-a96b-00-2.ngrok-free.app"  # Замените на ваш ngrok URL
+API_BASE_URL = "https://e73b-2a12-5940-a96b-00-2.ngrok-free.app"  # Замените на ваш ngrok URL
 
 def test_telegram_auth():
     """Тестирование авторизации через Telegram"""
