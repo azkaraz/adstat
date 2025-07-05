@@ -250,9 +250,9 @@ export const authService = {
     return response.data
   },
 
-  async vkAuthCallback(code: string): Promise<{ message: string }> {
+  async vkAuthCallback(code: string, codeVerifier: string): Promise<{ message: string }> {
     const token = localStorage.getItem('token')
-    const response = await api.post(API_ROUTES.AUTH_VK_CALLBACK, { code }, {
+    const response = await api.post(API_ROUTES.AUTH_VK_CALLBACK, { code, code_verifier: codeVerifier }, {
       headers: {
         Authorization: `Bearer ${token}`
       }

@@ -37,6 +37,7 @@ class GoogleCallbackRequest(BaseModel):
 
 class VKCallbackRequest(BaseModel):
     code: str
+    code_verifier: str
 
 @router.post("/telegram")
 async def telegram_auth(
@@ -171,12 +172,13 @@ async def vk_auth_callback(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Обработка callback от VK OAuth
+    Обработка callback от VK ID
     """
     try:
         code = data.code
+        code_verifier = data.code_verifier
         logger.info(f"VK CALLBACK: code={code}")
-        tokens = exchange_vk_code_for_tokens(code)
+        tokens = exchange_vk_code_for_tokens(code, code_verifier)
         logger.info(f"VK CALLBACK: tokens={tokens}")
         # Сохраняем токены для пользователя
         current_user.vk_access_token = tokens['access_token']
