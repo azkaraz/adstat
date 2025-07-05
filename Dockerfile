@@ -22,8 +22,12 @@ COPY . .
 # Создаем директорию для загрузок
 RUN mkdir -p uploads
 
+# Делаем startup скрипт исполняемым
+COPY startup.sh .
+RUN chmod +x startup.sh
+
 # Открываем порт
 EXPOSE 8000
 
-# Команда для запуска приложения
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"] 
+# Команда для запуска приложения с миграциями
+CMD ["./startup.sh"] 
