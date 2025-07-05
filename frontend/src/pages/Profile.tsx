@@ -30,16 +30,7 @@ const Profile: React.FC = () => {
     }
   }, [user, navigate])
 
-  // Функция для генерации случайной строки (state)
-  function generateRandomString(length = 43) {
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
-    let result = ''
-    const values = window.crypto.getRandomValues(new Uint8Array(length))
-    for (let i = 0; i < length; i++) {
-      result += charset[values[i] % charset.length]
-    }
-    return result
-  }
+
 
   // VK ID авторизация согласно официальной документации
   // https://id.vk.com/about/business/go/docs/ru/vkid/latest/oauth-vk
