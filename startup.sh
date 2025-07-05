@@ -6,7 +6,7 @@ alembic downgrade base
 echo "Database dropped successfully"
 
 echo "Creating fresh database..."
-alembic upgrade head
+alembic upgrade 001_initial_schema
 echo "Database created successfully"
 
 # Запускаем приложение
