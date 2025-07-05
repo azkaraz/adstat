@@ -41,28 +41,29 @@ const Profile: React.FC = () => {
     return result
   }
 
-  // VK ID авторизация
+  // VK OAuth авторизация
   const handleVkIdAuth = async () => {
     setLoading(true)
     setMessage('')
     try {
-      // Проверяем, что VK ID SDK загружен
-      if (!window.VKID) {
-        throw new Error('VK ID SDK не загружен')
-      }
-
-      // Инициализируем VK ID
-      const vkId = new window.VKID({
-        app_id: 53816386,
-        redirect_uri: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
-        state: generateRandomString(32)
+      const clientId = 53816386
+      const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
+      const scope = 'ads,offline'
+      const state = generateRandomString(32)
+      
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: clientId.toString(),
+        redirect_uri: redirectUri,
+        state,
+        scope,
+        display: 'page',
+        v: '5.131'
       })
-
-      // Запускаем авторизацию
-      vkId.auth()
+      window.location.href = `https://oauth.vk.com/authorize?${params.toString()}`
     } catch (e) {
-      console.error('VK ID auth error:', e)
-      setMessage('Ошибка VK ID авторизации')
+      console.error('VK OAuth auth error:', e)
+      setMessage('Ошибка VK OAuth авторизации')
     } finally {
       setLoading(false)
     }
