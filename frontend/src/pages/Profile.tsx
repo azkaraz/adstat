@@ -111,22 +111,7 @@ const Profile: React.FC = () => {
     }
   }
 
-  const handleVkIdAuth = async () => {
-    try {
-      setLoading(true)
-      setMessage('')
-      
-      // Используем VK ID SDK для авторизации
-      const result = await VKID.Auth.login()
-      console.log('VK ID Auth.login успешен:', result)
-      handleVkIdSuccess(result)
-    } catch (error: any) {
-      console.error('VK ID Auth.login ошибка:', error)
-      setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
 
 
@@ -370,20 +355,11 @@ const Profile: React.FC = () => {
               </p>
             </div>
             {!vkLinked && (
-              <>
-                <div 
-                  ref={vkIdContainerRef}
-                  id="VkIdSdkOneTap"
-                  className="w-full mb-4"
-                />
-                <button
-                  onClick={handleVkIdAuth}
-                  disabled={loading}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
-                >
-                  {loading ? 'Авторизация...' : 'Привязать VK-аккаунт через VK ID'}
-                </button>
-              </>
+              <div 
+                ref={vkIdContainerRef}
+                id="VkIdSdkOneTap"
+                className="w-full"
+              />
             )}
           </div>
         </div>
