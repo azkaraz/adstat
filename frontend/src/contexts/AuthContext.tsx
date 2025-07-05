@@ -78,13 +78,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Новый формат с initData
         console.log('✅ AuthContext.login: Используем WebApp auth с initData')
         response = await authService.telegramWebAppAuth({ initData: telegramData.initData })
+        console.log('🔍 AuthContext.login: Получен ответ от telegramWebAppAuth:', response)
       } else {
         // Старый формат с объектом данных
         console.log('⚠️ AuthContext.login: Используем legacy auth с объектом данных')
         response = await authService.telegramAuth(telegramData)
+        console.log('🔍 AuthContext.login: Получен ответ от telegramAuth:', response)
       }
       
       console.log('✅ AuthContext.login: Авторизация успешна:', response)
+      console.log('🔍 AuthContext.login: Проверяем структуру ответа:', {
+        hasAccessToken: !!response?.access_token,
+        hasUser: !!response?.user,
+        tokenType: response?.token_type,
+        userId: response?.user?.id
+      })
+      
+      if (!response?.access_token) {
+        throw new Error('Отсутствует access_token в ответе')
+      }
+      
+      if (!response?.user) {
+        throw new Error('Отсутствует user в ответе')
+      }
       
       setToken(response.access_token)
       setUser(response.user)

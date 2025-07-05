@@ -173,13 +173,30 @@ export const authService = {
       try {
         const response = await api.post(API_ROUTES.AUTH_WEBAPP_TELEGRAM, data)
         console.log('✅ authService.telegramWebAppAuth: Ответ получен:', response.data)
+        console.log('🔍 authService.telegramWebAppAuth: Структура ответа:', {
+          hasAccessToken: !!response.data.access_token,
+          hasTokenType: !!response.data.token_type,
+          hasUser: !!response.data.user,
+          userKeys: response.data.user ? Object.keys(response.data.user) : 'no user'
+        })
+        
+        // Проверяем наличие всех необходимых полей
+        if (!response.data.access_token) {
+          throw new Error('Отсутствует access_token в ответе')
+        }
+        if (!response.data.user) {
+          throw new Error('Отсутствует user в ответе')
+        }
         
         // Новый формат ответа - сразу возвращаем данные
-        return {
+        const result = {
           access_token: response.data.access_token,
           token_type: response.data.token_type,
           user: response.data.user
         }
+        
+        console.log('✅ authService.telegramWebAppAuth: Успешно сформирован результат:', result)
+        return result
       } catch (error: any) {
         console.error(`❌ authService.telegramWebAppAuth: Попытка ${attempt}/${maxRetries} - Ошибка:`, error)
         

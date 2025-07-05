@@ -298,33 +298,42 @@ def validate(hash_str, init_data, token, c_str="WebAppData"):
 @router.post("/web-app/auth/telegram")
 async def auth_telegram(data: Dict[str, Any], db: Session = Depends(get_db)):
 
+    logger.info(f"Telegram WebApp auth request received: {data}")
     init_data_str = data.get("initData")
 
     if not init_data_str:
+        logger.error("initData is missing in request")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="initData is missing"
         )
 
     try:
+        logger.info(f"Processing initData: {init_data_str[:100]}...")
         hash_str = init_data_str.split("&hash=")[1]
         decoded_query = parse_qs(init_data_str)
         user_info_str = decoded_query['user'][0]
         
+        logger.info(f"User info string: {user_info_str}")
+        
         # Парсим JSON из строки user_info
         import json
         user_info = json.loads(user_info_str)
+        logger.info(f"Parsed user info: {user_info}")
         
         if validate(hash_str, init_data_str, settings.TELEGRAM_BOT_TOKEN):
+            logger.info("Telegram signature validation successful")
             # Находим или создаем пользователя
             telegram_id = str(user_info.get("id"))
             username = user_info.get("username", "")
             first_name = user_info.get("first_name", "")
             last_name = user_info.get("last_name", "")
             
+            logger.info(f"Looking for user with telegram_id: {telegram_id}")
             user = db.query(User).filter(User.telegram_id == telegram_id).first()
             
             if not user:
+                logger.info(f"Creating new user with telegram_id: {telegram_id}")
                 user = User(
                     telegram_id=telegram_id,
                     username=username,
@@ -334,10 +343,13 @@ async def auth_telegram(data: Dict[str, Any], db: Session = Depends(get_db)):
                 db.add(user)
                 db.commit()
                 db.refresh(user)
+                logger.info(f"New user created with ID: {user.id}")
             else:
+                logger.info(f"Found existing user with ID: {user.id}")
                 if (user.username != username or 
                     user.first_name != first_name or 
                     user.last_name != last_name):
+                    logger.info("Updating user information")
                     user.username = username
                     user.first_name = first_name
                     user.last_name = last_name
@@ -345,8 +357,9 @@ async def auth_telegram(data: Dict[str, Any], db: Session = Depends(get_db)):
                     db.refresh(user)
             
             access_token = create_access_token(data={"sub": str(user.id)})
+            logger.info(f"Created access token for user {user.id}")
             
-            return {
+            response_data = {
                 "access_token": access_token,
                 "token_type": "bearer",
                 "user": {
@@ -360,7 +373,11 @@ async def auth_telegram(data: Dict[str, Any], db: Session = Depends(get_db)):
                     "has_vk_account": bool(getattr(user, 'vk_access_token', None))
                 }
             }
+            
+            logger.info(f"Returning response: {response_data}")
+            return response_data
         else:
+            logger.error("Telegram signature validation failed")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Неверная подпись Telegram"
