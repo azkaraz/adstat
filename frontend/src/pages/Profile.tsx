@@ -41,53 +41,36 @@ const Profile: React.FC = () => {
     return result
   }
 
-  // Функция для base64url-encoding
-  function base64urlencode(str: ArrayBuffer) {
-    return btoa(String.fromCharCode(...new Uint8Array(str)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-  }
-
-  // Генерация code_verifier и code_challenge
-  async function pkceChallengeFromVerifier(verifier: string) {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(verifier)
-    const digest = await window.crypto.subtle.digest('SHA-256', data)
-    return base64urlencode(digest)
-  }
-
-  // VK ID авторизация
+  // VK ID авторизация для веб-приложения
+  // App ID: 53860967
+  // Redirect URL: https://azkaraz.github.io/adstat/vk-oauth-callback
   const handleVkIdAuth = async () => {
     setLoading(true)
     setMessage('')
     try {
-      const clientId = 53816386
-      const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
-      const scope = 'email,phone'
-      const state = generateRandomString(32)
-      
-      // Генерируем code_verifier и code_challenge для PKCE
-      const codeVerifier = generateRandomString(64)
-      const codeChallenge = await pkceChallengeFromVerifier(codeVerifier)
-      
-      // Сохраняем code_verifier для последующего обмена
-      sessionStorage.setItem('vk_code_verifier', codeVerifier)
-      sessionStorage.setItem('vk_state', state)
-      
-      const params = new URLSearchParams({
-        response_type: 'code',
-        client_id: clientId.toString(),
-        redirect_uri: redirectUri,
-        state,
-        scope,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256'
+      // Проверяем, что VK ID SDK загружен
+      if (!window.VKID) {
+        throw new Error('VK ID SDK не загружен')
+      }
+
+      // Инициализируем VK ID с конфигурацией из VK ID приложения
+      window.VKID.Config.init({
+        app: 53860967,
+        redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
+        responseMode: window.VKID.ConfigResponseMode?.Callback || 'callback',
+        source: window.VKID.ConfigSource?.LOWCODE || 'lowcode',
+        scope: 'phone email' // Базовые права доступа
       })
-      window.location.href = `https://id.vk.com/oauth2/auth?${params.toString()}`
+
+      // Запускаем авторизацию
+      window.VKID.Auth.login()
+        .catch((error: any) => {
+          console.error('VK ID auth error:', error)
+          setMessage('Ошибка VK ID авторизации')
+        })
     } catch (e) {
-      console.error('VK ID auth error:', e)
-      setMessage('Ошибка VK ID авторизации')
+      console.error('VK ID init error:', e)
+      setMessage('Ошибка инициализации VK ID')
     } finally {
       setLoading(false)
     }

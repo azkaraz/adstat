@@ -13,7 +13,6 @@ const VKOAuthCallback: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
-    const state = urlParams.get('state')
     
     if (!code) {
       setStatus('error')
@@ -22,29 +21,7 @@ const VKOAuthCallback: React.FC = () => {
       return
     }
     
-    // Получаем code_verifier из sessionStorage
-    const codeVerifier = sessionStorage.getItem('vk_code_verifier')
-    if (!codeVerifier) {
-      setStatus('error')
-      setMessage('Не найден code_verifier')
-      setTimeout(() => navigate(ROUTES.PROFILE), 2000)
-      return
-    }
-    
-    // Проверяем state для безопасности
-    const savedState = sessionStorage.getItem('vk_state')
-    if (state !== savedState) {
-      setStatus('error')
-      setMessage('Неверный state параметр')
-      setTimeout(() => navigate(ROUTES.PROFILE), 2000)
-      return
-    }
-    
-    // Очищаем sessionStorage
-    sessionStorage.removeItem('vk_code_verifier')
-    sessionStorage.removeItem('vk_state')
-    
-    authService.vkAuthCallback(code, codeVerifier)
+    authService.vkAuthCallback(code)
       .then(() => {
         setStatus('success')
         setMessage('VK аккаунт успешно привязан!')
