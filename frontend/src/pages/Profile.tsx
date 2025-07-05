@@ -33,19 +33,37 @@ const Profile: React.FC = () => {
     const initVkId = async () => {
       try {
         let attempts = 0
-        const maxAttempts = 50 // Увеличиваем количество попыток
+        const maxAttempts = 100 // Увеличиваем количество попыток для продакшена
         
-        while (!window.VK && attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 100))
-          attempts++
+        const checkVK = () => {
+          return new Promise<boolean>((resolve) => {
+            const check = () => {
+              if (window.VK) {
+                resolve(true)
+              } else if (attempts < maxAttempts) {
+                attempts++
+                setTimeout(check, 200) // Увеличиваем интервал
+              } else {
+                resolve(false)
+              }
+            }
+            check()
+          })
         }
         
-        if (window.VK) {
+        const vkLoaded = await checkVK()
+        
+        if (vkLoaded && window.VK) {
           console.log('VK ID SDK initialized on component load')
-          // Инициализируем VK ID
-          window.VK.init({
-            apiId: 53860967
-          })
+          try {
+            // Инициализируем VK ID
+            window.VK.init({
+              apiId: 53860967
+            })
+            console.log('VK ID SDK успешно инициализирован')
+          } catch (initError) {
+            console.error('Ошибка инициализации VK ID SDK:', initError)
+          }
         } else {
           console.error('VK ID SDK не загружен после ожидания')
         }
@@ -86,32 +104,7 @@ const Profile: React.FC = () => {
     }
   }
 
-  // Обмен кода авторизации на токены
-  const exchangeVkCode = async (code: string) => {
-    try {
-      const response = await fetch('/api/auth/vk-callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code })
-      })
 
-      if (response.ok) {
-        const data = await response.json()
-        console.log('VK ID tokens received:', data)
-        setMessage('VK ID авторизация успешна!')
-        // Обновляем данные пользователя через перезагрузку страницы
-        window.location.reload()
-      } else {
-        const error = await response.json()
-        setMessage(`Ошибка обмена кода: ${error.detail}`)
-      }
-    } catch (error) {
-      console.error('Exchange code error:', error)
-      setMessage('Ошибка обмена кода авторизации')
-    }
-  }
 
   const fetchSpreadsheets = async () => {
     setLoadingSheets(true)
