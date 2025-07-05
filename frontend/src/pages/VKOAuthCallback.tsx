@@ -23,7 +23,7 @@ const VKOAuthCallback: React.FC = () => {
       .then(() => {
         setStatus('success')
         setMessage('VK аккаунт успешно привязан!')
-        setTimeout(() => window.location.href = ROUTES.PROFILE, 1500)
+        setTimeout(() => navigate(ROUTES.PROFILE), 1500)
       })
       .catch(() => {
         setStatus('error')

@@ -41,48 +41,28 @@ const Profile: React.FC = () => {
     return result
   }
 
-  // Функция для base64url-encoding
-  function base64urlencode(str: ArrayBuffer) {
-    return btoa(String.fromCharCode(...new Uint8Array(str)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-  }
-
-  // Генерация code_verifier и code_challenge
-  async function pkceChallengeFromVerifier(verifier: string) {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(verifier)
-    const digest = await window.crypto.subtle.digest('SHA-256', data)
-    return base64urlencode(digest)
-  }
-
-  // Кастомная VK ID OAuth авторизация без SDK
+  // VK OAuth авторизация
   const handleVkIdAuth = async () => {
     setLoading(true)
     setMessage('')
     try {
       const clientId = 53816386
       const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
-      const scope = ''
+      const scope = 'ads,offline'
       const state = generateRandomString(32)
-      const codeVerifier = generateRandomString(64)
-      const codeChallenge = await pkceChallengeFromVerifier(codeVerifier)
-      // Сохраняем verifier и state для последующего обмена
-      sessionStorage.setItem('vk_code_verifier', codeVerifier)
-      sessionStorage.setItem('vk_state', state)
+      
       const params = new URLSearchParams({
         response_type: 'code',
         client_id: clientId.toString(),
         redirect_uri: redirectUri,
         state,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256',
-        scope
+        scope,
+        display: 'page',
+        v: '5.131'
       })
-      window.location.href = `https://id.vk.com/authorize?${params.toString()}`
+      window.location.href = `https://oauth.vk.com/authorize?${params.toString()}`
     } catch (e) {
-      setMessage('Ошибка VK ID авторизации')
+      setMessage('Ошибка VK OAuth авторизации')
     } finally {
       setLoading(false)
     }
