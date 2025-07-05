@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Применяем миграции
-echo "Applying database migrations..."
-echo "Current migration status:"
-alembic current
-echo "Available migrations:"
-alembic history --verbose
-echo "Upgrading to head..."
+# Полная пересборка базы данных
+echo "Dropping and recreating database..."
+alembic downgrade base
+echo "Database dropped successfully"
+
+echo "Creating fresh database..."
 alembic upgrade head
+echo "Database created successfully"
 
 # Запускаем приложение
 echo "Starting application..."
