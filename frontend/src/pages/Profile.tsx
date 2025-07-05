@@ -84,13 +84,14 @@ const Profile: React.FC = () => {
     setLoading(true)
     setMessage('')
     try {
-      // Используем прямую ссылку на VK ID OAuth
-      const clientId = 53860967
+      // Используем прямую ссылку на VK OAuth
+      const clientId = 53860967 // Это должно быть правильное VK приложение
       const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
       const scope = 'phone email'
       const state = Math.random().toString(36).substring(7)
       
-      const authUrl = `https://id.vk.com/oauth2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`
+      // Используем правильный URL для VK OAuth
+      const authUrl = `https://oauth.vk.com/authorize?client_id=${clientId}&display=page&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code&v=5.131&state=${state}`
       
       console.log('VK ID auth URL:', authUrl)
       
