@@ -9,6 +9,7 @@ from fastapi import Request
 from urllib.parse import parse_qs, unquote
 import logging
 from pydantic import BaseModel
+import requests
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -207,6 +208,68 @@ async def vk_auth_callback(
             detail=f"Ошибка VK авторизации: {str(e)}"
         )
 
+@router.post("/vk-callback")
+async def vk_callback(request: Request, db: Session = Depends(get_db)):
+    """
+    Обработка callback от VK ID OAuth 2.1
+    Обмен кода авторизации на токены
+    """
+    try:
+        body = await request.json()
+        code = body.get('code')
+        
+        if not code:
+            raise HTTPException(status_code=400, detail="Код авторизации не предоставлен")
+        
+        # Обмениваем код на токены через VK ID API
+        tokens = exchange_vk_code_for_tokens(code)
+        
+        # Получаем информацию о пользователе из токена
+        user_info = get_vk_user_info(tokens['access_token'])
+        
+        # Находим или создаем пользователя
+        user = db.query(User).filter(User.vk_id == user_info['user_id']).first()
+        
+        if not user:
+            # Создаем нового пользователя с VK ID
+            user = User(
+                vk_id=str(user_info['user_id']),
+                email=user_info.get('email'),
+                first_name=user_info.get('first_name', ''),
+                last_name=user_info.get('last_name', ''),
+                has_vk_account=True
+            )
+            db.add(user)
+        else:
+            # Обновляем существующего пользователя
+            user.has_vk_account = True
+            if user_info.get('email'):
+                user.email = user_info['email']
+        
+        db.commit()
+        db.refresh(user)
+        
+        # Генерируем JWT токен
+        access_token = create_access_token(data={"sub": str(user.id)})
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "has_vk_account": user.has_vk_account,
+                "has_google_account": user.has_google_account,
+                "has_google_sheet": user.has_google_sheet
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"VK ID callback error: {e}")
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки VK ID callback: {str(e)}")
+
 def validate(hash_str, init_data, token, c_str="WebAppData"):
     """
     Validates the data received from the Telegram web app, using the
@@ -264,3 +327,30 @@ async def list_google_spreadsheets(current_user: User = Depends(get_current_user
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка получения списка таблиц: {str(e)}"
         )
+
+def get_vk_user_info(access_token: str) -> dict:
+    """
+    Получить информацию о пользователе через VK ID API
+    """
+    
+    url = 'https://api.vk.com/method/users.get'
+    params = {
+        'access_token': access_token,
+        'fields': 'email,first_name,last_name',
+        'v': '5.131'
+    }
+    
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
+    
+    if 'error' in data:
+        raise Exception(f"VK API error: {data['error']}")
+    
+    user_data = data['response'][0]
+    return {
+        'user_id': user_data['id'],
+        'first_name': user_data.get('first_name', ''),
+        'last_name': user_data.get('last_name', ''),
+        'email': user_data.get('email', '')
+    }

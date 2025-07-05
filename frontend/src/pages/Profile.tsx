@@ -41,7 +41,8 @@ const Profile: React.FC = () => {
     return result
   }
 
-  // VK ID авторизация для веб-приложения
+  // VK ID авторизация согласно официальной документации
+  // https://id.vk.com/about/business/go/docs/ru/vkid/latest/oauth-vk
   // App ID: 53860967
   // Redirect URL: https://azkaraz.github.io/adstat/vk-oauth-callback
   const handleVkIdAuth = async () => {
@@ -53,17 +54,25 @@ const Profile: React.FC = () => {
         throw new Error('VK ID SDK не загружен')
       }
 
-      // Инициализируем VK ID с конфигурацией из VK ID приложения
+      // Инициализируем VK ID с конфигурацией согласно документации
       window.VKID.Config.init({
         app: 53860967,
         redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
         responseMode: window.VKID.ConfigResponseMode?.Callback || 'callback',
         source: window.VKID.ConfigSource?.LOWCODE || 'lowcode',
-        scope: 'phone email' // Базовые права доступа
+        scope: 'phone email' // Базовые права доступа согласно документации
       })
 
-      // Запускаем авторизацию
+      // Запускаем авторизацию через OAuth 2.1
       window.VKID.Auth.login()
+        .then((result: any) => {
+          console.log('VK ID auth success:', result)
+          // После успешной авторизации получаем код для обмена на токены
+          if (result.code) {
+            // Отправляем код на бэкенд для обмена на токены
+            exchangeVkCode(result.code)
+          }
+        })
         .catch((error: any) => {
           console.error('VK ID auth error:', error)
           setMessage('Ошибка VK ID авторизации')
@@ -73,6 +82,33 @@ const Profile: React.FC = () => {
       setMessage('Ошибка инициализации VK ID')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Обмен кода авторизации на токены
+  const exchangeVkCode = async (code: string) => {
+    try {
+      const response = await fetch('/api/auth/vk-callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('VK ID tokens received:', data)
+        setMessage('VK ID авторизация успешна!')
+        // Обновляем данные пользователя через перезагрузку страницы
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        setMessage(`Ошибка обмена кода: ${error.detail}`)
+      }
+    } catch (error) {
+      console.error('Exchange code error:', error)
+      setMessage('Ошибка обмена кода авторизации')
     }
   }
 
