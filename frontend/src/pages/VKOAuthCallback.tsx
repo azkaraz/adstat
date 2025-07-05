@@ -1,44 +1,93 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { authService } from '../services/authService'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '../config'
-import { useAuth } from '../contexts/AuthContext'
 
 const VKOAuthCallback: React.FC = () => {
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { token, login } = useAuth()
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState('Обработка авторизации VK ID...')
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const code = urlParams.get('code')
-    
-    if (!code) {
-      setStatus('error')
-      setMessage('Не найден code в URL')
-      setTimeout(() => navigate(ROUTES.PROFILE), 2000)
-      return
+    const handleCallback = async () => {
+      try {
+        const code = searchParams.get('code')
+        const state = searchParams.get('state')
+        const error = searchParams.get('error')
+
+        console.log('VK OAuth callback params:', { code, state, error })
+
+        if (error) {
+          setError(`Ошибка авторизации VK ID: ${error}`)
+          return
+        }
+
+        if (!code) {
+          setError('Код авторизации не получен')
+          return
+        }
+
+        // Отправляем код на бэкенд для обмена на токены
+        const response = await fetch('/api/auth/vk-callback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log('VK ID auth successful:', data)
+          setMessage('VK ID авторизация успешна! Перенаправление...')
+          
+          // Перенаправляем на профиль
+          setTimeout(() => {
+            navigate(ROUTES.PROFILE)
+          }, 2000)
+        } else {
+          const errorData = await response.json()
+          setError(`Ошибка обмена кода: ${errorData.detail || 'Неизвестная ошибка'}`)
+        }
+      } catch (err: any) {
+        console.error('VK OAuth callback error:', err)
+        setError(`Ошибка обработки callback: ${err.message || 'Неизвестная ошибка'}`)
+      }
     }
-    
-    authService.vkAuthCallback(code)
-      .then(() => {
-        setStatus('success')
-        setMessage('VK аккаунт успешно привязан!')
-        setTimeout(() => navigate(ROUTES.PROFILE), 1500)
-      })
-      .catch(() => {
-        setStatus('error')
-        setMessage('Ошибка при привязке VK аккаунта')
-        setTimeout(() => navigate(ROUTES.PROFILE), 2000)
-      })
-  }, [navigate, token, login])
+
+    handleCallback()
+  }, [searchParams, navigate])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[40vh]">
-      {status === 'loading' && <p className="text-lg">Привязываем VK аккаунт...</p>}
-      {status === 'success' && <p className="text-green-600 text-lg">{message}</p>}
-      {status === 'error' && <p className="text-red-600 text-lg">{message}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              VK ID Авторизация
+            </h2>
+            
+            {error ? (
+              <div className="text-red-600">
+                <p className="text-sm">{error}</p>
+                <button
+                  onClick={() => navigate(ROUTES.PROFILE)}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Вернуться в профиль
+                </button>
+              </div>
+            ) : (
+              <div className="text-gray-600">
+                <p className="text-sm">{message}</p>
+                <div className="mt-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
