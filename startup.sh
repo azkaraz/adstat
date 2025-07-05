@@ -2,7 +2,10 @@
 
 # Полная пересборка базы данных
 echo "Dropping and recreating database..."
-alembic downgrade base
+
+# Удаляем все таблицы напрямую через SQL
+psql $DATABASE_URL -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO postgres; GRANT ALL ON SCHEMA public TO public;"
+
 echo "Database dropped successfully"
 
 echo "Creating fresh database..."
