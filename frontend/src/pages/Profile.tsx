@@ -64,6 +64,15 @@ const Profile: React.FC = () => {
             setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
           })
         }
+        
+        // Также добавляем обработчик для Auth.login
+        VKID.Auth.login().then((data: any) => {
+          console.log('VK ID Auth.login успешен:', data)
+          handleVkIdSuccess(data)
+        }).catch((error: any) => {
+          console.error('VK ID Auth.login ошибка:', error)
+          setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
+        })
       } catch (error) {
         console.error('VK ID initialization error:', error)
         setMessage(`Ошибка инициализации VK ID: ${error}`)
@@ -78,6 +87,22 @@ const Profile: React.FC = () => {
 
 
 
+
+  const handleVkIdAuth = async () => {
+    try {
+      setLoading(true)
+      setMessage('')
+      
+      const result = await VKID.Auth.login()
+      console.log('VK ID Auth.login успешен:', result)
+      handleVkIdSuccess(result)
+    } catch (error: any) {
+      console.error('VK ID Auth.login ошибка:', error)
+      setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleVkIdSuccess = async (data: any) => {
     try {
@@ -355,8 +380,15 @@ const Profile: React.FC = () => {
                 <div 
                   ref={vkIdContainerRef}
                   id="VkIdSdkOneTap"
-                  className="w-full"
+                  className="w-full mb-4"
                 />
+                <button
+                  onClick={handleVkIdAuth}
+                  disabled={loading}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+                >
+                  {loading ? 'Авторизация...' : 'Привязать VK-аккаунт через VK ID'}
+                </button>
               </>
             )}
           </div>
