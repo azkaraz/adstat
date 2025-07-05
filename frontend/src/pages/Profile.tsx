@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { sheetsService } from '../services/sheetsService'
 import { ROUTES, API_ROUTES } from '../config'
+import * as VKID from '@vkid/sdk'
 
 const Profile: React.FC = () => {
   const { user, token } = useAuth()
@@ -16,6 +17,7 @@ const Profile: React.FC = () => {
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
+  const vkIdContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!user) {
@@ -29,8 +31,46 @@ const Profile: React.FC = () => {
       fetchSpreadsheets()
     }
     
-    // Временно отключаем VK ID SDK до создания правильного приложения
-    console.log('VK ID SDK временно отключен - нужно создать правильное VK ID приложение')
+    // Инициализируем VK ID SDK при загрузке компонента
+    const initVkId = () => {
+      try {
+        console.log('Инициализация VK ID SDK...')
+        
+        // Инициализируем VK ID SDK с правильными настройками
+        VKID.Config.init({
+          app: 53860967,
+          redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback'
+        })
+        
+        console.log('VK ID SDK успешно инициализирован')
+        
+        // Создаем OneTap виджет
+        if (vkIdContainerRef.current) {
+          const oneTap = new VKID.OneTap()
+          oneTap.render({ 
+            container: vkIdContainerRef.current,
+            showAlternativeLogin: true
+          })
+          
+          // Обработка успешной авторизации
+          oneTap.on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, (data: any) => {
+            console.log('VK ID авторизация успешна:', data)
+            handleVkIdSuccess(data)
+          })
+          
+          // Обработка ошибок
+          oneTap.on(VKID.WidgetEvents.ERROR, (error: any) => {
+            console.error('VK ID ошибка:', error)
+            setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
+          })
+        }
+      } catch (error) {
+        console.error('VK ID initialization error:', error)
+        setMessage(`Ошибка инициализации VK ID: ${error}`)
+      }
+    }
+    
+    initVkId()
   }, [user, navigate])
 
 
@@ -39,28 +79,51 @@ const Profile: React.FC = () => {
 
 
 
+  const handleVkIdSuccess = async (data: any) => {
+    try {
+      console.log('Обработка успешной VK ID авторизации:', data)
+      
+      // Отправляем данные на бэкенд
+      const response = await fetch('/api/auth/vk-callback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          code: data.code,
+          device_id: data.device_id 
+        })
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('VK ID авторизация успешна:', result)
+        setMessage('VK ID авторизация успешна!')
+        // Обновляем данные пользователя через перезагрузку страницы
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        setMessage(`Ошибка обмена кода: ${error.detail}`)
+      }
+    } catch (error) {
+      console.error('Ошибка обработки VK ID авторизации:', error)
+      setMessage('Ошибка обработки VK ID авторизации')
+    }
+  }
+
   const handleVkIdAuth = async () => {
     try {
       setLoading(true)
       setMessage('')
       
-      // Используем прямой переход на VK ID OAuth
-      const clientId = 53860967 // Временно используем старый ID
-      const redirectUri = 'https://azkaraz.github.io/adstat/vk-oauth-callback'
-      const scope = 'phone email'
-      const state = Math.random().toString(36).substring(7)
-      
-      // Используем правильный URL для VK ID OAuth
-      const authUrl = `https://id.vk.com/oauth2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`
-      
-      console.log('VK ID auth URL:', authUrl)
-      
-      // Перенаправляем пользователя на VK ID авторизацию
-      window.location.href = authUrl
-      
+      // Используем VK ID SDK для авторизации
+      const result = await VKID.Auth.login()
+      console.log('VK ID Auth.login успешен:', result)
+      handleVkIdSuccess(result)
     } catch (error: any) {
-      console.error('VK ID auth error:', error)
+      console.error('VK ID Auth.login ошибка:', error)
       setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
+    } finally {
       setLoading(false)
     }
   }
@@ -307,13 +370,20 @@ const Profile: React.FC = () => {
               </p>
             </div>
             {!vkLinked && (
-              <button
-                onClick={handleVkIdAuth}
-                disabled={loading}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
-              >
-                {loading ? 'Переход...' : 'Привязать VK-аккаунт через VK ID'}
-              </button>
+              <>
+                <div 
+                  ref={vkIdContainerRef}
+                  id="VkIdSdkOneTap"
+                  className="w-full mb-4"
+                />
+                <button
+                  onClick={handleVkIdAuth}
+                  disabled={loading}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+                >
+                  {loading ? 'Авторизация...' : 'Привязать VK-аккаунт через VK ID'}
+                </button>
+              </>
             )}
           </div>
         </div>
