@@ -62,11 +62,6 @@ const DebugInfo: React.FC = () => {
   const clearAuthFlags = () => {
     // Очищаем флаги авторизации из localStorage
     localStorage.removeItem('token')
-    // Сбрасываем флаги в authService
-    if (window.authService) {
-      window.authService._authInProgress = false
-      window.authService._authPromise = null
-    }
     console.log('🔧 Debug: Флаги авторизации сброшены')
   }
 
