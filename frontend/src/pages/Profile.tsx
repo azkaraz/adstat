@@ -28,6 +28,34 @@ const Profile: React.FC = () => {
     if (user.has_google_account || user.has_google_sheet) {
       fetchSpreadsheets()
     }
+    
+    // Инициализируем VK ID SDK при загрузке компонента
+    const initVkId = async () => {
+      try {
+        let attempts = 0
+        const maxAttempts = 10
+        
+        while (!window.VKID && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          attempts++
+        }
+        
+        if (window.VKID) {
+          console.log('VK ID SDK initialized on component load')
+          window.VKID.Config.init({
+            app: 53860967,
+            redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
+            responseMode: 'callback',
+            source: 'lowcode',
+            scope: 'phone email'
+          })
+        }
+      } catch (error) {
+        console.error('VK ID initialization error:', error)
+      }
+    }
+    
+    initVkId()
   }, [user, navigate])
 
 
@@ -40,19 +68,33 @@ const Profile: React.FC = () => {
     setLoading(true)
     setMessage('')
     try {
-      // Проверяем, что VK ID SDK загружен
+      // Ждем загрузки VK ID SDK
+      let attempts = 0
+      const maxAttempts = 10
+      
+      while (!window.VKID && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        attempts++
+      }
+      
       if (!window.VKID) {
-        throw new Error('VK ID SDK не загружен')
+        throw new Error('VK ID SDK не загружен после ожидания')
       }
 
+      console.log('VK ID SDK loaded:', window.VKID)
+
       // Инициализируем VK ID с конфигурацией согласно документации
-      window.VKID.Config.init({
+      const config = {
         app: 53860967,
         redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
-        responseMode: window.VKID.ConfigResponseMode?.Callback || 'callback',
-        source: window.VKID.ConfigSource?.LOWCODE || 'lowcode',
-        scope: 'phone email' // Базовые права доступа согласно документации
-      })
+        responseMode: 'callback',
+        source: 'lowcode',
+        scope: 'phone email'
+      }
+      
+      console.log('VK ID config:', config)
+      
+      window.VKID.Config.init(config)
 
       // Запускаем авторизацию через OAuth 2.1
       window.VKID.Auth.login()
@@ -68,9 +110,9 @@ const Profile: React.FC = () => {
           console.error('VK ID auth error:', error)
           setMessage('Ошибка VK ID авторизации')
         })
-    } catch (e) {
+    } catch (e: any) {
       console.error('VK ID init error:', e)
-      setMessage('Ошибка инициализации VK ID')
+      setMessage(`Ошибка инициализации VK ID: ${e.message || 'Неизвестная ошибка'}`)
     } finally {
       setLoading(false)
     }
