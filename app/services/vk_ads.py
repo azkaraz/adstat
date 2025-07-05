@@ -22,7 +22,7 @@ def exchange_vk_code_for_tokens(code: str) -> dict:
     """
     Обменять код авторизации на токены через VK ID OAuth 2.1
     """
-    # Для VK ID используем другой URL и параметры
+    # Для VK ID используем правильные параметры
     params = {
         'grant_type': 'authorization_code',
         'client_id': settings.VK_CLIENT_ID,
@@ -38,7 +38,11 @@ def exchange_vk_code_for_tokens(code: str) -> dict:
     logger.info(f"Code length: {len(code) if code else 0}")
     
     try:
-        resp = requests.post(url, data=params)
+        # Используем JSON формат для VK ID
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        resp = requests.post(url, json=params, headers=headers)
         logger.info(f"VK ID API response status: {resp.status_code}")
         logger.info(f"VK ID API response: {resp.text}")
         
