@@ -295,24 +295,82 @@ def validate(hash_str, init_data, token, c_str="WebAppData"):
 
     return data_check.hexdigest() == hash_str
 
-@router.post("/auth/telegram")
-async def auth_telegram(data: Dict[str, Any]):
+@router.post("/web-app/auth/telegram")
+async def auth_telegram(data: Dict[str, Any], db: Session = Depends(get_db)):
 
     init_data_str = data.get("initData")
 
     if not init_data_str:
-        return {"success": False, "error": "initData is missing"}
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="initData is missing"
+        )
 
-    hash_str = init_data_str.split("&hash=")[1]
-
-    decoded_query = parse_qs(init_data_str)
-    user_info = decoded_query['user'][0]
-
-    if validate(hash_str, init_data_str, settings.TELEGRAM_BOT_TOKEN):
-
-        return {"success": True, "user": user_info}
-    else:
-        return {"success": False, "error": "Авторизация не пройдена"}
+    try:
+        hash_str = init_data_str.split("&hash=")[1]
+        decoded_query = parse_qs(init_data_str)
+        user_info_str = decoded_query['user'][0]
+        
+        # Парсим JSON из строки user_info
+        import json
+        user_info = json.loads(user_info_str)
+        
+        if validate(hash_str, init_data_str, settings.TELEGRAM_BOT_TOKEN):
+            # Находим или создаем пользователя
+            telegram_id = str(user_info.get("id"))
+            username = user_info.get("username", "")
+            first_name = user_info.get("first_name", "")
+            last_name = user_info.get("last_name", "")
+            
+            user = db.query(User).filter(User.telegram_id == telegram_id).first()
+            
+            if not user:
+                user = User(
+                    telegram_id=telegram_id,
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+            else:
+                if (user.username != username or 
+                    user.first_name != first_name or 
+                    user.last_name != last_name):
+                    user.username = username
+                    user.first_name = first_name
+                    user.last_name = last_name
+                    db.commit()
+                    db.refresh(user)
+            
+            access_token = create_access_token(data={"sub": str(user.id)})
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user": {
+                    "id": user.id,
+                    "telegram_id": user.telegram_id,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "has_google_sheet": bool(user.google_sheet_id),
+                    "has_vk_account": bool(getattr(user, 'vk_access_token', None))
+                }
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Неверная подпись Telegram"
+            )
+    except Exception as e:
+        logger.error(f"Telegram WebApp auth error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка авторизации: {str(e)}"
+        )
 
 @router.get("/google/spreadsheets")
 async def list_google_spreadsheets(current_user: User = Depends(get_current_user)):

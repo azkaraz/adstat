@@ -42,7 +42,7 @@ export const API_ROUTES = {
   AUTH_GOOGLE_CALLBACK: '/api/auth/google/callback',
   AUTH_GOOGLE_SPREADSHEETS: '/api/auth/google/spreadsheets',
   AUTH_VK_URL: '/api/auth/vk/url',
-  AUTH_VK_CALLBACK: '/api/auth/vk/callback',
+  AUTH_VK_CALLBACK: '/api/auth/vk-callback',
 }
 
 console.log('Environment:', environment)

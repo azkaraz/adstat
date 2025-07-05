@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ROUTES } from '../config'
+import { ROUTES, API_BASE_URL } from '../config'
 
 const VKOAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -27,8 +27,8 @@ const VKOAuthCallback: React.FC = () => {
           return
         }
 
-        // Отправляем код на бэкенд для обмена на токены
-        const response = await fetch('/api/auth/vk-callback', {
+        // Отправляем код на бэкенд для обмена на токены (используем эндпоинт без авторизации)
+        const response = await fetch(`${API_BASE_URL}/api/auth/vk-callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

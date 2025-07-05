@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { sheetsService } from '../services/sheetsService'
-import { ROUTES, API_ROUTES } from '../config'
+import { ROUTES, API_ROUTES, API_BASE_URL } from '../config'
 import * as VKID from '@vkid/sdk'
 
 const Profile: React.FC = () => {
@@ -83,8 +83,8 @@ const Profile: React.FC = () => {
     try {
       console.log('Обработка успешной VK ID авторизации:', data)
       
-      // Отправляем данные на бэкенд
-      const response = await fetch('/api/auth/vk-callback', {
+      // Отправляем данные на бэкенд (используем эндпоинт без авторизации)
+      const response = await fetch(`${API_BASE_URL}/api/auth/vk-callback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

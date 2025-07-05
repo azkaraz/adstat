@@ -174,15 +174,11 @@ export const authService = {
         const response = await api.post(API_ROUTES.AUTH_WEBAPP_TELEGRAM, data)
         console.log('✅ authService.telegramWebAppAuth: Ответ получен:', response.data)
         
-        // Проверяем успешность авторизации
-        if (response.data.success) {
-          return {
-            access_token: response.data.access_token,
-            token_type: response.data.token_type,
-            user: response.data.user_data
-          }
-        } else {
-          throw new Error(response.data.error || 'Авторизация не удалась')
+        // Новый формат ответа - сразу возвращаем данные
+        return {
+          access_token: response.data.access_token,
+          token_type: response.data.token_type,
+          user: response.data.user
         }
       } catch (error: any) {
         console.error(`❌ authService.telegramWebAppAuth: Попытка ${attempt}/${maxRetries} - Ошибка:`, error)
