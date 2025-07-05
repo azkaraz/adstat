@@ -2,6 +2,11 @@
 
 # Применяем миграции
 echo "Applying database migrations..."
+echo "Current migration status:"
+alembic current
+echo "Available migrations:"
+alembic history --verbose
+echo "Upgrading to head..."
 alembic upgrade head
 
 # Запускаем приложение
