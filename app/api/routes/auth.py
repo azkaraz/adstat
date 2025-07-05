@@ -417,33 +417,39 @@ async def vk_debug_info():
 
 def get_vk_user_info(access_token: str) -> dict:
     """
-    Получить информацию о пользователе через VK ID API
+    Получить информацию о пользователе через VK API
     """
     
-    # Для VK ID используем другой эндпоинт
-    url = 'https://id.vk.com/api/v1/user'
-    headers = {
-        'Authorization': f'Bearer {access_token}'
+    # Используем стандартный VK API
+    url = 'https://api.vk.com/method/users.get'
+    params = {
+        'access_token': access_token,
+        'fields': 'email,first_name,last_name',
+        'v': '5.131'
     }
     
-    logger.info(f"Getting VK ID user info. URL: {url}")
+    logger.info(f"Getting VK user info. URL: {url}")
     
     try:
-        response = requests.get(url, headers=headers)
-        logger.info(f"VK ID user info response status: {response.status_code}")
-        logger.info(f"VK ID user info response: {response.text}")
+        response = requests.get(url, params=params)
+        logger.info(f"VK user info response status: {response.status_code}")
+        logger.info(f"VK user info response: {response.text}")
         
         response.raise_for_status()
         data = response.json()
         
-        logger.info(f"VK ID user data: {data}")
+        logger.info(f"VK user data: {data}")
         
+        if 'error' in data:
+            raise Exception(f"VK API error: {data['error']}")
+        
+        user_data = data['response'][0]
         return {
-            'user_id': data.get('id', ''),
-            'first_name': data.get('first_name', ''),
-            'last_name': data.get('last_name', ''),
-            'email': data.get('email', '')
+            'user_id': user_data['id'],
+            'first_name': user_data.get('first_name', ''),
+            'last_name': user_data.get('last_name', ''),
+            'email': user_data.get('email', '')
         }
     except requests.exceptions.RequestException as e:
-        logger.error(f"VK ID user info request failed: {e}")
+        logger.error(f"VK user info request failed: {e}")
         raise
