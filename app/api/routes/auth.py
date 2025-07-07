@@ -219,6 +219,7 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         body = await request.json()
         code = body.get('code')
         error = body.get('error')
+        device_id = body.get('device_id')
         
         if error:
             raise HTTPException(status_code=400, detail=f"VK authorization error: {error}")
@@ -232,7 +233,8 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         callback_params = {
             'code': code,
             'error': error,
-            'state': body.get('state')
+            'state': body.get('state'),
+            'device_id': device_id
         }
         
         result = handle_vk_id_callback(callback_params)

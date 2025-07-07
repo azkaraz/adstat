@@ -54,13 +54,13 @@ class VKIDAuth:
             query_string = urllib.parse.urlencode(params)
             return f"https://oauth.vk.com/authorize?{query_string}"
 
-    def exchange_code_for_token(self, code: str, use_vk_id: bool = False, code_verifier: Optional[str] = None) -> Optional[Dict]:
+    def exchange_code_for_token(self, code: str, use_vk_id: bool = False, code_verifier: Optional[str] = None, device_id: Optional[str] = None) -> Optional[Dict]:
         if use_vk_id:
-            return self._try_vk_id_token_exchange(code, code_verifier)
+            return self._try_vk_id_token_exchange(code, code_verifier, device_id)
         else:
             return self._try_vk_oauth_token_exchange(code)
 
-    def _try_vk_id_token_exchange(self, code: str, code_verifier: Optional[str]) -> Optional[Dict]:
+    def _try_vk_id_token_exchange(self, code: str, code_verifier: Optional[str], device_id: Optional[str]) -> Optional[Dict]:
         data = {
             'grant_type': 'authorization_code',
             'client_id': self.client_id,
@@ -70,6 +70,8 @@ class VKIDAuth:
         }
         if code_verifier:
             data['code_verifier'] = code_verifier
+        if device_id:
+            data['device_id'] = device_id
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json'
@@ -305,22 +307,16 @@ def handle_vk_callback(code: str, error: Optional[str] = None) -> Dict:
 def handle_vk_id_callback(request_args: Dict) -> Dict:
     """
     Обработчик callback для VK ID
-    
     Args:
-        request_args: Словарь с параметрами запроса (code, error, state)
-        
+        request_args: Словарь с параметрами запроса (code, error, state, device_id)
     Returns:
         Результат авторизации
     """
-    
-    # Инициализация VK ID
     vk_auth = VKIDAuth(
         client_id=settings.VK_CLIENT_ID,
         client_secret=settings.VK_CLIENT_SECRET,
         redirect_uri=settings.VK_REDIRECT_URI
     )
-    
-    # Проверка на ошибки
     error = request_args.get('error')
     if error:
         return {
@@ -328,38 +324,30 @@ def handle_vk_id_callback(request_args: Dict) -> Dict:
             "error": f"VK authorization error: {error}",
             "error_description": request_args.get('error_description', '')
         }
-    
-    # Получение кода авторизации
     code = request_args.get('code')
     if not code:
         return {
             "success": False,
             "error": "No authorization code received"
         }
-    
+    device_id = request_args.get('device_id')
     # Обмен кода на токен
-    token_data = vk_auth.exchange_code_for_token(code)
-    
+    token_data = vk_auth.exchange_code_for_token(code, use_vk_id=True, code_verifier=request_args.get('code_verifier'), device_id=device_id)
     if not token_data or not token_data.get('success'):
         return {
             "success": False,
             "error": "Failed to get access token",
             "details": token_data
         }
-    
     access_token = token_data['access_token']
     token_source = token_data.get('source', 'vk_id')
-    
-    # Получение информации о пользователе
     user_info = vk_auth.get_user_info(access_token, token_source)
-    
     if not user_info or not user_info.get('success'):
         return {
             "success": False,
             "error": "Failed to get user info",
             "token_data": token_data
         }
-    
     return {
         "success": True,
         "user": user_info['user'],
