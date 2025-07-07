@@ -212,13 +212,18 @@ const Profile: React.FC = () => {
     }
     return result
   }
+  function base64urlencode(bytes: Uint8Array) {
+    let str = ''
+    for (let i = 0; i < bytes.length; i++) {
+      str += String.fromCharCode(bytes[i])
+    }
+    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  }
   async function sha256base64(str: string) {
     const encoder = new TextEncoder()
     const data = encoder.encode(str)
     const hash = await window.crypto.subtle.digest('SHA-256', data)
-    const bytes = new Uint8Array(hash)
-    let base64 = btoa(String.fromCharCode(...bytes))
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    return base64urlencode(new Uint8Array(hash))
   }
   async function startVkIdAuth() {
     const code_verifier = generateRandomString(64)
