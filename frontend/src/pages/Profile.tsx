@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
@@ -18,7 +18,6 @@ const Profile: React.FC = () => {
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
-  // const vkIdContainerRef = useRef<HTMLDivElement>(null) // больше не нужен
 
   useEffect(() => {
     if (!user) {
@@ -34,42 +33,6 @@ const Profile: React.FC = () => {
   }, [user, navigate])
 
 
-
-
-
-
-
-  const handleVkIdSuccess = async (data: any) => {
-    try {
-      console.log('Обработка успешной VK ID авторизации:', data)
-      
-      // Отправляем данные на бэкенд (используем эндпоинт без авторизации)
-      const response = await fetch(`${API_BASE_URL}/api/auth/vk-callback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          code: data.code,
-          device_id: data.device_id 
-        })
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log('VK ID авторизация успешна:', result)
-        setMessage('VK ID авторизация успешна!')
-        // Обновляем данные пользователя через перезагрузку страницы
-        window.location.reload()
-      } else {
-        const error = await response.json()
-        setMessage(`Ошибка обмена кода: ${error.detail}`)
-      }
-    } catch (error) {
-      console.error('Ошибка обработки VK ID авторизации:', error)
-      setMessage('Ошибка обработки VK ID авторизации')
-    }
-  }
 
 
 
