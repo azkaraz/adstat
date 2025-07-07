@@ -203,6 +203,41 @@ const Profile: React.FC = () => {
     }
   }
 
+  // --- VK ID PKCE генерация ---
+  function generateRandomString(length: number) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' // VK рекомендует a-z, A-Z, 0-9, _, -
+    let result = ''
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
+  async function sha256base64(str: string) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(str)
+    const hash = await window.crypto.subtle.digest('SHA-256', data)
+    const bytes = new Uint8Array(hash)
+    let base64 = btoa(String.fromCharCode(...bytes))
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  }
+  async function startVkIdAuth() {
+    const code_verifier = generateRandomString(64)
+    const code_challenge = await sha256base64(code_verifier)
+    const state = generateRandomString(32)
+    localStorage.setItem('vk_code_verifier', code_verifier)
+    localStorage.setItem('vk_state', state)
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: '53860967', // заменить на переменную, если нужно
+      redirect_uri: 'https://azkaraz.github.io/adstat/vk-oauth-callback',
+      code_challenge,
+      code_challenge_method: 'S256',
+      state,
+      scope: 'email phone'
+    })
+    window.location.href = `https://id.vk.com/authorize?${params.toString()}`
+  }
+
   if (!user) return null
 
   return (
@@ -355,11 +390,19 @@ const Profile: React.FC = () => {
               </p>
             </div>
             {!vkLinked && (
-              <div 
-                ref={vkIdContainerRef}
-                id="VkIdSdkOneTap"
-                className="w-full"
-              />
+              <>
+                <div 
+                  ref={vkIdContainerRef}
+                  id="VkIdSdkOneTap"
+                  className="w-full"
+                />
+                <button
+                  onClick={startVkIdAuth}
+                  className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Войти через VK ID (без SDK)
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -13,9 +13,14 @@ const VKOAuthCallback: React.FC = () => {
       try {
         const code = searchParams.get('code')
         const state = searchParams.get('state')
+        const device_id = searchParams.get('device_id')
         const error = searchParams.get('error')
 
-        console.log('VK OAuth callback params:', { code, state, error })
+        // Получаем сохранённые значения PKCE и state
+        const code_verifier = localStorage.getItem('vk_code_verifier')
+        const state_original = localStorage.getItem('vk_state')
+
+        console.log('VK OAuth callback params:', { code, state, device_id, error, code_verifier, state_original })
 
         if (error) {
           setError(`Ошибка авторизации VK ID: ${error}`)
@@ -26,22 +31,35 @@ const VKOAuthCallback: React.FC = () => {
           setError('Код авторизации не получен')
           return
         }
+        if (!device_id) {
+          setError('device_id не получен')
+          return
+        }
+        if (!code_verifier) {
+          setError('code_verifier не найден (авторизация не инициирована корректно)')
+          return
+        }
+        if (!state || !state_original || state !== state_original) {
+          setError('Ошибка безопасности: state не совпадает!')
+          return
+        }
 
-        // Отправляем код на бэкенд для обмена на токены (используем эндпоинт без авторизации)
+        // Отправляем code, device_id, code_verifier на backend
         const response = await fetch(`${API_BASE_URL}/api/auth/vk-callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ code })
+          body: JSON.stringify({ code, device_id, code_verifier })
         })
 
         if (response.ok) {
           const data = await response.json()
           console.log('VK ID auth successful:', data)
           setMessage('VK ID авторизация успешна! Перенаправление...')
-          
-          // Перенаправляем на профиль
+          // Очищаем PKCE и state
+          localStorage.removeItem('vk_code_verifier')
+          localStorage.removeItem('vk_state')
           setTimeout(() => {
             navigate(ROUTES.PROFILE)
           }, 2000)
