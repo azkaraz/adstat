@@ -224,8 +224,8 @@ const Profile: React.FC = () => {
     const code_verifier = generateRandomString(64)
     const code_challenge = await sha256base64(code_verifier)
     const state = generateRandomString(32)
-    sessionStorage.setItem('vk_code_verifier', code_verifier)
-    sessionStorage.setItem('vk_state', state)
+    localStorage.setItem('vk_code_verifier', code_verifier)
+    localStorage.setItem('vk_state', state)
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: '53860967', // заменить на переменную, если нужно

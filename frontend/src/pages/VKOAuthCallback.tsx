@@ -17,8 +17,8 @@ const VKOAuthCallback: React.FC = () => {
         const error = searchParams.get('error')
 
         // Получаем сохранённые значения PKCE и state
-        const code_verifier = sessionStorage.getItem('vk_code_verifier')
-        const state_original = sessionStorage.getItem('vk_state')
+        const code_verifier = localStorage.getItem('vk_code_verifier')
+        const state_original = localStorage.getItem('vk_state')
 
         console.log('VK OAuth callback params:', { code, state, device_id, error, code_verifier, state_original })
 
@@ -58,8 +58,8 @@ const VKOAuthCallback: React.FC = () => {
           console.log('VK ID auth successful:', data)
           setMessage('VK ID авторизация успешна! Перенаправление...')
           // Очищаем PKCE и state
-          sessionStorage.removeItem('vk_code_verifier')
-          sessionStorage.removeItem('vk_state')
+          localStorage.removeItem('vk_code_verifier')
+          localStorage.removeItem('vk_state')
           setTimeout(() => {
             navigate(ROUTES.PROFILE)
           }, 2000)
