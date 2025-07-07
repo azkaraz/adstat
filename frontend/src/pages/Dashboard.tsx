@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { API_ROUTES, API_BASE_URL } from '../config'
 
 interface Report {
   id: number
@@ -28,12 +29,11 @@ const Dashboard: React.FC = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch('/api/user/reports', {
+      const response = await fetch(`${API_BASE_URL}${API_ROUTES.USER_REPORTS}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-      
       if (response.ok) {
         const data = await response.json()
         setReports(data)
