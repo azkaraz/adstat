@@ -238,7 +238,7 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         result = handle_vk_id_callback(callback_params)
         
         if not result.get('success'):
-            raise HTTPException(status_code=400, detail=result.get('error', 'Unknown error'))
+            raise HTTPException(status_code=400, detail=result)
         
         user_data = result['user']
         token_data = result['token_data']
