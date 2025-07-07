@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { sheetsService } from '../services/sheetsService'
-import { ROUTES, API_ROUTES, API_BASE_URL } from '../config'
+import { ROUTES, API_ROUTES } from '../config'
 // Удаляем импорт VKID SDK
 // import * as VKID from '@vkid/sdk'
 
