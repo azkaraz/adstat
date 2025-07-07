@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, unquote
 import logging
 from pydantic import BaseModel
 import requests
+import traceback
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -292,8 +293,8 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         }
         
     except Exception as e:
-        logger.error(f"VK ID callback error: {e}")
-        raise HTTPException(status_code=500, detail=f"Ошибка обработки VK ID callback: {str(e)}")
+        logger.error(f"VK ID callback error: {e}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Ошибка обработки VK ID callback: {e}\n{traceback.format_exc()}")
 
 def validate(hash_str, init_data, token, c_str="WebAppData"):
     """
