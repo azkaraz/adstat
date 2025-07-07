@@ -19,8 +19,7 @@ const VKOAuthCallback: React.FC = () => {
         // Получаем сохранённые значения PKCE и state
         const code_verifier = localStorage.getItem('vk_code_verifier')
         const state_original = localStorage.getItem('vk_state')
-
-        console.log('VK OAuth callback params:', { code, state, device_id, error, code_verifier, state_original })
+        console.log('[VKID] После редиректа:', { code, state, device_id, error, code_verifier, state_original })
 
         if (error) {
           setError(`Ошибка авторизации VK ID: ${error}`)
