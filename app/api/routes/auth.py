@@ -217,34 +217,58 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
     try:
         body = await request.json()
         code = body.get('code')
+        error = body.get('error')
+        
+        if error:
+            raise HTTPException(status_code=400, detail=f"VK authorization error: {error}")
         
         if not code:
             raise HTTPException(status_code=400, detail="Код авторизации не предоставлен")
         
-        # Обмениваем код на токены через VK ID API
-        tokens = exchange_vk_code_for_tokens(code)
+        # Используем новую функцию для обработки callback
+        from app.services.vk_ads import handle_vk_id_callback
         
-        # Получаем информацию о пользователе из токена
-        user_info = get_vk_user_info(tokens['access_token'])
+        callback_params = {
+            'code': code,
+            'error': error,
+            'state': body.get('state')
+        }
+        
+        result = handle_vk_id_callback(callback_params)
+        
+        if not result.get('success'):
+            raise HTTPException(status_code=400, detail=result.get('error', 'Unknown error'))
+        
+        user_data = result['user']
+        token_data = result['token_data']
+        source = result.get('source', 'vk_oauth')
         
         # Находим или создаем пользователя
-        user = db.query(User).filter(User.vk_id == user_info['user_id']).first()
+        user = db.query(User).filter(User.vk_id == str(user_data.get('id', ''))).first()
         
         if not user:
             # Создаем нового пользователя с VK ID
             user = User(
-                vk_id=str(user_info['user_id']),
-                email=user_info.get('email'),
-                first_name=user_info.get('first_name', ''),
-                last_name=user_info.get('last_name', ''),
+                vk_id=str(user_data.get('id', '')),
+                email=user_data.get('email', ''),
+                first_name=user_data.get('first_name', ''),
+                last_name=user_data.get('last_name', ''),
                 has_vk_account=True
             )
             db.add(user)
         else:
             # Обновляем существующего пользователя
             user.has_vk_account = True
-            if user_info.get('email'):
-                user.email = user_info['email']
+            if user_data.get('email'):
+                user.email = user_data['email']
+            if user_data.get('first_name'):
+                user.first_name = user_data['first_name']
+            if user_data.get('last_name'):
+                user.last_name = user_data['last_name']
+        
+        # Сохраняем токены
+        user.vk_access_token = token_data['access_token']
+        user.vk_refresh_token = token_data.get('refresh_token', '')
         
         db.commit()
         db.refresh(user)
@@ -261,9 +285,10 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "has_vk_account": user.has_vk_account,
-                "has_google_account": user.has_google_account,
-                "has_google_sheet": user.has_google_sheet
-            }
+                "has_google_account": getattr(user, 'has_google_account', False),
+                "has_google_sheet": bool(getattr(user, 'google_sheet_id', None))
+            },
+            "vk_source": source
         }
         
     except Exception as e:
@@ -417,36 +442,46 @@ async def vk_debug_info():
 
 def get_vk_user_info(access_token: str) -> dict:
     """
-    Получить информацию о пользователе через VK ID API
+    Получить информацию о пользователе через VK API
     """
     
-    # Используем VK ID API для получения информации о пользователе
-    url = 'https://id.vk.com/api/v1/user'
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Accept': 'application/json'
+    # Используем стандартный VK API для получения информации о пользователе
+    url = 'https://api.vk.com/method/users.get'
+    params = {
+        'access_token': access_token,
+        'v': '5.131',
+        'fields': 'photo_50,photo_100,email'
     }
     
-    logger.info(f"Getting VK ID user info. URL: {url}")
+    logger.info(f"Getting VK user info. URL: {url}")
     
     try:
-        response = requests.get(url, headers=headers)
-        logger.info(f"VK ID user info response status: {response.status_code}")
-        logger.info(f"VK ID user info response: {response.text}")
+        response = requests.get(url, params=params)
+        logger.info(f"VK user info response status: {response.status_code}")
+        logger.info(f"VK user info response: {response.text}")
         
-        response.raise_for_status()
-        data = response.json()
-        
-        logger.info(f"VK ID user data: {data}")
-        
-        return {
-            'user_id': data.get('id', ''),
-            'first_name': data.get('first_name', ''),
-            'last_name': data.get('last_name', ''),
-            'email': data.get('email', '')
-        }
+        if response.status_code == 200:
+            data = response.json()
+            if 'response' in data and data['response']:
+                user_data = data['response'][0]
+                logger.info(f"VK user data: {user_data}")
+                
+                return {
+                    'user_id': user_data.get('id', ''),
+                    'first_name': user_data.get('first_name', ''),
+                    'last_name': user_data.get('last_name', ''),
+                    'email': user_data.get('email', ''),
+                    'photo': user_data.get('photo_100', '')
+                }
+            else:
+                logger.error(f"No user data in VK API response: {data}")
+                raise Exception("No user data in VK API response")
+        else:
+            logger.error(f"VK API Error {response.status_code}: {response.text}")
+            raise Exception(f"VK API Error {response.status_code}")
+            
     except requests.exceptions.RequestException as e:
-        logger.error(f"VK ID user info request failed: {e}")
+        logger.error(f"VK user info request failed: {e}")
         if hasattr(e, 'response') and e.response:
             logger.error(f"Response text: {e.response.text}")
         raise
