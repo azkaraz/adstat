@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { sheetsService } from '../services/sheetsService'
 import { ROUTES, API_ROUTES, API_BASE_URL } from '../config'
-import * as VKID from '@vkid/sdk'
+// Удаляем импорт VKID SDK
+// import * as VKID from '@vkid/sdk'
 
 const Profile: React.FC = () => {
   const { user, token } = useAuth()
@@ -17,7 +18,7 @@ const Profile: React.FC = () => {
   const [spreadsheets, setSpreadsheets] = useState<{ id: string, name: string }[]>([])
   const [selectedSheetId, setSelectedSheetId] = useState('')
   const [loadingSheets, setLoadingSheets] = useState(false)
-  const vkIdContainerRef = useRef<HTMLDivElement>(null)
+  // const vkIdContainerRef = useRef<HTMLDivElement>(null) // больше не нужен
 
   useEffect(() => {
     if (!user) {
@@ -30,47 +31,6 @@ const Profile: React.FC = () => {
     if (user.has_google_account || user.has_google_sheet) {
       fetchSpreadsheets()
     }
-    
-    // Инициализируем VK ID SDK при загрузке компонента
-    const initVkId = () => {
-      try {
-        console.log('Инициализация VK ID SDK...')
-        
-        // Инициализируем VK ID SDK с правильными настройками
-        VKID.Config.init({
-          app: 53860967,
-          redirectUrl: 'https://azkaraz.github.io/adstat/vk-oauth-callback'
-        })
-        
-        console.log('VK ID SDK успешно инициализирован')
-        
-        // Создаем OneTap виджет
-        if (vkIdContainerRef.current) {
-          const oneTap = new VKID.OneTap()
-          oneTap.render({ 
-            container: vkIdContainerRef.current,
-            showAlternativeLogin: true
-          })
-          
-          // Обработка успешной авторизации
-          oneTap.on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, (data: any) => {
-            console.log('VK ID авторизация успешна:', data)
-            handleVkIdSuccess(data)
-          })
-          
-          // Обработка ошибок
-          oneTap.on(VKID.WidgetEvents.ERROR, (error: any) => {
-            console.error('VK ID ошибка:', error)
-            setMessage(`Ошибка VK ID авторизации: ${error.message || 'Неизвестная ошибка'}`)
-          })
-        }
-      } catch (error) {
-        console.error('VK ID initialization error:', error)
-        setMessage(`Ошибка инициализации VK ID: ${error}`)
-      }
-    }
-    
-    initVkId()
   }, [user, navigate])
 
 
@@ -396,19 +356,12 @@ const Profile: React.FC = () => {
               </p>
             </div>
             {!vkLinked && (
-              <>
-                <div 
-                  ref={vkIdContainerRef}
-                  id="VkIdSdkOneTap"
-                  className="w-full"
-                />
-                <button
-                  onClick={startVkIdAuth}
-                  className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Войти через VK ID (без SDK)
-                </button>
-              </>
+              <button
+                onClick={startVkIdAuth}
+                className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Привязать ВК
+              </button>
             )}
           </div>
         </div>
