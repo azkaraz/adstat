@@ -78,6 +78,7 @@ class VKIDAuth:
         }
         try:
             logger.info(f"Trying VK ID endpoint: {self.vkid_token_url}")
+            logger.info(f"VK ID token exchange data: {data}")
             response = requests.post(self.vkid_token_url, data=data, headers=headers)
             logger.info(f"VK ID Response status: {response.status_code}")
             logger.info(f"VK ID Response text: {response.text}")
