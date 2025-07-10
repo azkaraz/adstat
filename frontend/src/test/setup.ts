@@ -3,9 +3,9 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { server } from './mocks/server'
 
 // Устанавливаем MSW сервер для мокирования API
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
+// beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
+// afterEach(() => server.resetHandlers())
+// afterAll(() => server.close())
 
 // Мокаем window.Telegram для тестов
 Object.defineProperty(window, 'Telegram', {
