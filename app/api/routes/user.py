@@ -34,6 +34,7 @@ async def get_user_profile(
         "has_google_sheet": bool(current_user.google_sheet_id),
         "has_google_account": bool(current_user.google_access_token),
         "has_vk_account": bool(current_user.has_vk_account),
+        "vk_access_token": getattr(current_user, 'vk_access_token', None),
         "created_at": current_user.created_at
     }
 
