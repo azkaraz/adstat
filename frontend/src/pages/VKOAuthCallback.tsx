@@ -44,10 +44,16 @@ const VKOAuthCallback: React.FC = () => {
         }
 
         // Отправляем code, device_id, code_verifier на backend
+        const token = localStorage.getItem('token') || localStorage.getItem('access_token')
+        if (!token) {
+          setError('Сначала войдите через Telegram!')
+          return
+        }
         const response = await fetch(`${API_BASE_URL}/api/auth/vk-callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
           },
           body: JSON.stringify({ code, device_id, code_verifier })
         })
