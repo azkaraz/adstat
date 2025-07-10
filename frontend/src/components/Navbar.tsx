@@ -75,6 +75,14 @@ const Navbar: React.FC = () => {
                 >
                   Загрузить отчет
                 </Link>
+                {user.has_vk_account && (
+                  <Link
+                    to="/vk-campaigns"
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Рекламные кампании VK
+                  </Link>
+                )}
                 <Link
                   to="/profile"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
@@ -123,6 +131,15 @@ const Navbar: React.FC = () => {
               >
                 Загрузить отчет
               </Link>
+              {user.has_vk_account && (
+                <Link
+                  to="/vk-campaigns"
+                  className="block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Рекламные кампании VK
+                </Link>
+              )}
               <Link
                 to="/profile"
                 className="block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"

@@ -11,6 +11,7 @@ import TestTelegramWebApp from './pages/TestTelegramWebApp'
 import DebugInfo from './components/DebugInfo'
 import GoogleOAuthCallback from './pages/GoogleOAuthCallback'
 import VKOAuthCallback from './pages/VKOAuthCallback'
+import VKCampaigns from './pages/VKCampaigns';
 import './App.css'
 
 // Определяем базовый путь для GitHub Pages
@@ -258,6 +259,7 @@ function App() {
               <Route path="/test-telegram-web-app" element={<TestTelegramWebApp />} />
               <Route path="/google-oauth-callback" element={<GoogleOAuthCallback />} />
               <Route path="/vk-oauth-callback" element={<VKOAuthCallback />} />
+              <Route path="/vk-campaigns" element={<VKCampaigns />} />
             </Routes>
           </main>
           <DebugInfo />

@@ -241,6 +241,62 @@ def get_vk_user_info(access_token: str, token_source: str = 'vk_oauth') -> Optio
     
     return None
 
+def get_vk_ad_campaigns(access_token: str) -> list:
+    """
+    Получить последние 10 рекламных кампаний VK и их статистику.
+    Возвращает список словарей с нужными полями.
+    """
+    # Получаем кампании
+    url = 'https://api.vk.com/api/v2/ad_plans.json'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Accept': 'application/json'
+    }
+    params = {
+        'limit': 10,
+        'sorting': '-created',
+        'fields': 'id,name,created'
+    }
+    try:
+        resp = requests.get(url, headers=headers, params=params)
+        if resp.status_code != 200:
+            logger.error(f"Ошибка получения кампаний VK: {resp.status_code} {resp.text}")
+            return []
+        data = resp.json()
+        campaigns = data.get('items', [])
+        result = []
+        for camp in campaigns:
+            camp_id = camp.get('id')
+            # Получаем статистику по кампании
+            stat_url = f'https://api.vk.com/api/v2/statistics/ad_plans/{camp_id}.json'
+            stat_params = {
+                # Можно добавить параметры дат, если нужно
+                'fields': 'impressions,clicks,subscribers,spent,cpc,ctr'
+            }
+            stat_resp = requests.get(stat_url, headers=headers, params=stat_params)
+            if stat_resp.status_code == 200:
+                stat_data = stat_resp.json()
+                stats = stat_data.get('items', [{}])[0] if stat_data.get('items') else {}
+            else:
+                stats = {}
+            result.append({
+                'id': camp_id,
+                'name': camp.get('name'),
+                'created': camp.get('created'),
+                'report_from': stats.get('report_from'),
+                'report_to': stats.get('report_to'),
+                'impressions': stats.get('impressions'),
+                'clicks': stats.get('clicks'),
+                'subscribers': stats.get('subscribers'),
+                'spent': stats.get('spent'),
+                'cpc': stats.get('cpc'),
+                'ctr': stats.get('ctr'),
+            })
+        return result
+    except Exception as e:
+        logger.error(f"Ошибка при получении кампаний VK: {e}")
+        return []
+
 # Простая функция для быстрого тестирования
 def quick_vk_token_exchange(code: str) -> Optional[Dict]:
     """

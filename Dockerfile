@@ -16,15 +16,10 @@ COPY requirements.txt .
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем код приложения
-COPY . .
-
-# Создаем директорию для загрузок
-RUN mkdir -p uploads
-
-# Делаем startup скрипт исполняемым
 COPY startup.sh .
 RUN chmod +x startup.sh
+
+COPY . .
 
 # Открываем порт
 EXPOSE 8000

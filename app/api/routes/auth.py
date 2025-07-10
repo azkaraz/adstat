@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.models.user import User
 from app.services.auth import create_access_token, verify_telegram_auth, get_current_user
 from app.services.google_sheets import get_google_auth_url, exchange_code_for_tokens, get_user_spreadsheets
-from app.services.vk_ads import get_vk_auth_url, exchange_vk_code_for_tokens
+from app.services.vk_ads import get_vk_auth_url, exchange_vk_code_for_tokens, get_vk_ad_campaigns
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -418,6 +418,17 @@ async def vk_debug_info():
         "vk_client_secret_configured": bool(settings.VK_CLIENT_SECRET),
         "auth_url": get_vk_auth_url()
     }
+
+@router.get("/vk_ads/campaigns")
+async def get_vk_ads_campaigns(current_user: User = Depends(get_current_user)):
+    """
+    Получить последние 10 рекламных кампаний VK с нужными полями для текущего пользователя
+    """
+    vk_access_token = getattr(current_user, 'vk_access_token', None)
+    if not vk_access_token:
+        raise HTTPException(status_code=400, detail="VK аккаунт не привязан")
+    campaigns = get_vk_ad_campaigns(vk_access_token)
+    return {"campaigns": campaigns}
 
 def get_vk_user_info(access_token: str) -> dict:
     """
