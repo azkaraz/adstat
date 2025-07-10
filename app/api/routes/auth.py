@@ -483,6 +483,7 @@ async def unlink_vk_account(current_user: User = Depends(get_current_user), db: 
     """
     setattr(current_user, 'vk_access_token', '')
     setattr(current_user, 'vk_refresh_token', '')
+    setattr(current_user, 'has_vk_account', False)
     db.commit()
     db.refresh(current_user)
     return {"message": "VK аккаунт отвязан", "has_vk_account": False}
