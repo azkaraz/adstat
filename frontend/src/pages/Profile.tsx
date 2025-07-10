@@ -180,7 +180,7 @@ const Profile: React.FC = () => {
       code_challenge,
       code_challenge_method: 'S256',
       state,
-      scope: 'email phone'
+      scope: 'email phone ads'
     })
     window.location.href = `https://id.vk.com/authorize?${params.toString()}`
   }

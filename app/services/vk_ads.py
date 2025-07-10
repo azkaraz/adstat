@@ -187,7 +187,7 @@ def get_vk_auth_url() -> str:
         client_secret=settings.VK_CLIENT_SECRET,
         redirect_uri=settings.VK_REDIRECT_URI
     )
-    return vk_auth.get_auth_url(scope="email", state="vk_oauth")
+    return vk_auth.get_auth_url(scope="email,ads", state="vk_oauth")
 
 def get_vk_id_auth_url() -> str:
     """
@@ -198,7 +198,7 @@ def get_vk_id_auth_url() -> str:
         client_secret=settings.VK_CLIENT_SECRET,
         redirect_uri=settings.VK_REDIRECT_URI
     )
-    return vk_auth.get_auth_url(scope="phone email", state="vk_oauth")
+    return vk_auth.get_auth_url(scope="phone email ads", state="vk_oauth")
 
 def exchange_vk_code_for_tokens(code: str) -> dict:
     """
@@ -246,52 +246,107 @@ def get_vk_ad_campaigns(access_token: str) -> list:
     Получить последние 10 рекламных кампаний VK и их статистику.
     Возвращает список словарей с нужными полями.
     """
-    # Получаем кампании
-    url = 'https://api.vk.com/api/v2/ad_plans.json'
+    # Сначала получаем список рекламных аккаунтов
+    accounts_url = 'https://api.vk.com/method/ads.getAccounts'
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Accept': 'application/json'
     }
-    params = {
-        'limit': 10,
-        'sorting': '-created',
-        'fields': 'id,name,created'
-    }
+    
     try:
-        resp = requests.get(url, headers=headers, params=params)
-        if resp.status_code != 200:
-            logger.error(f"Ошибка получения кампаний VK: {resp.status_code} {resp.text}")
+        # Получаем аккаунты
+        accounts_resp = requests.get(accounts_url, headers=headers)
+        if accounts_resp.status_code != 200:
+            logger.error(f"Ошибка получения аккаунтов VK: {accounts_resp.status_code} {accounts_resp.text}")
             return []
-        data = resp.json()
-        campaigns = data.get('items', [])
+        
+        accounts_data = accounts_resp.json()
+        if 'error' in accounts_data:
+            logger.error(f"Ошибка VK API: {accounts_data['error']}")
+            return []
+        
+        accounts = accounts_data.get('response', [])
+        if not accounts:
+            logger.error("Нет доступных рекламных аккаунтов")
+            return []
+        
+        # Берем первый аккаунт
+        account_id = accounts[0]['account_id']
+        logger.info(f"Используем аккаунт: {account_id}")
+        
+        # Получаем кампании
+        campaigns_url = 'https://api.vk.com/method/ads.getCampaigns'
+        params = {
+            'account_id': account_id,
+            'include_deleted': 0,
+            'limit': 10
+        }
+        
+        campaigns_resp = requests.get(campaigns_url, headers=headers, params=params)
+        if campaigns_resp.status_code != 200:
+            logger.error(f"Ошибка получения кампаний VK: {campaigns_resp.status_code} {campaigns_resp.text}")
+            return []
+        
+        campaigns_data = campaigns_resp.json()
+        if 'error' in campaigns_data:
+            logger.error(f"Ошибка VK API: {campaigns_data['error']}")
+            return []
+        
+        campaigns = campaigns_data.get('response', [])
         result = []
+        
+        # Получаем статистику для всех кампаний сразу
+        if campaigns:
+            campaign_ids = [str(camp.get('id')) for camp in campaigns if camp.get('id')]
+            if campaign_ids:
+                # Используем VK Ads API v2 для получения статистики
+                stats_url = 'https://ads.vk.com/api/v2/statistics/ad_plans/day.json'
+                stats_params = {
+                    'id': ','.join(campaign_ids),
+                    'date_from': '2024-01-01',
+                    'date_to': '2024-12-31',
+                    'metrics': 'base'
+                }
+                
+                stats_resp = requests.get(stats_url, headers=headers, params=stats_params)
+                stats_data = {}
+                if stats_resp.status_code == 200:
+                    try:
+                        stats_data = stats_resp.json()
+                        logger.info(f"Получена статистика: {stats_data}")
+                    except Exception as e:
+                        logger.error(f"Ошибка парсинга статистики: {e}")
+                else:
+                    logger.error(f"Ошибка получения статистики: {stats_resp.status_code} {stats_resp.text}")
+        
         for camp in campaigns:
             camp_id = camp.get('id')
-            # Получаем статистику по кампании
-            stat_url = f'https://api.vk.com/api/v2/statistics/ad_plans/{camp_id}.json'
-            stat_params = {
-                # Можно добавить параметры дат, если нужно
-                'fields': 'impressions,clicks,subscribers,spent,cpc,ctr'
-            }
-            stat_resp = requests.get(stat_url, headers=headers, params=stat_params)
-            if stat_resp.status_code == 200:
-                stat_data = stat_resp.json()
-                stats = stat_data.get('items', [{}])[0] if stat_data.get('items') else {}
-            else:
-                stats = {}
+            camp_stats = {}
+            
+            # Ищем статистику для этой кампании
+            if 'items' in stats_data:
+                for item in stats_data['items']:
+                    if item.get('id') == camp_id:
+                        if 'rows' in item and item['rows']:
+                            # Берем последнюю строку статистики
+                            camp_stats = item['rows'][-1]
+                        break
+            
             result.append({
                 'id': camp_id,
-                'name': camp.get('name'),
-                'created': camp.get('created'),
-                'report_from': stats.get('report_from'),
-                'report_to': stats.get('report_to'),
-                'impressions': stats.get('impressions'),
-                'clicks': stats.get('clicks'),
-                'subscribers': stats.get('subscribers'),
-                'spent': stats.get('spent'),
-                'cpc': stats.get('cpc'),
-                'ctr': stats.get('ctr'),
+                'name': camp.get('name', 'Без названия'),
+                'created': camp.get('create_time'),
+                'status': camp.get('status'),
+                'report_from': camp_stats.get('date'),
+                'report_to': camp_stats.get('date'),
+                'impressions': camp_stats.get('shows', 0),
+                'clicks': camp_stats.get('clicks', 0),
+                'subscribers': 0,  # VK не предоставляет эту метрику напрямую
+                'spent': camp_stats.get('spent', 0),
+                'cpc': camp_stats.get('cpc', 0),
+                'ctr': camp_stats.get('ctr', 0),
             })
+        
         return result
     except Exception as e:
         logger.error(f"Ошибка при получении кампаний VK: {e}")
