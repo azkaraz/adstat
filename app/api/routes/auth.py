@@ -216,9 +216,14 @@ async def vk_auth_callback(
         )
 
 @router.post("/vk-callback")
-async def vk_callback(request: Request, db: Session = Depends(get_db)):
+async def vk_callback(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
-    Аутентификация через VK: создаёт или обновляет пользователя по VK ID, сохраняет VK access_token, возвращает JWT.
+    Привязка VK к текущему профилю (только для аутентифицированного пользователя через Telegram).
+    Сохраняет VK access_token и refresh_token в профиль пользователя.
     """
     try:
         body = await request.json()
@@ -241,60 +246,29 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         result = handle_vk_id_callback(callback_params)
         if not result.get('success'):
             raise HTTPException(status_code=400, detail=result)
-        user_data = result['user']
         token_data = result['token_data']
-        source = result.get('source', 'vk_oauth')
-        # Находим пользователя по VK ID
-        user = db.query(User).filter(User.vk_id == str(user_data.get('id', ''))).first()
-        if not user:
-            # Если не найден по VK ID, ищем по email
-            email = user_data.get('email', '')
-            if email:
-                user = db.query(User).filter(User.email == email).first()
-                if user:
-                    user.vk_id = str(user_data.get('id', ''))  # type: ignore[assignment]
-                    user.has_vk_account = True  # type: ignore[assignment]
-                else:
-                    user = User(
-                        vk_id=str(user_data.get('id', '')),
-                        email=email,
-                        first_name=user_data.get('first_name', ''),
-                        last_name=user_data.get('last_name', ''),
-                        has_vk_account=True,  # type: ignore[assignment]
-                    )
-                    db.add(user)
-            else:
-                user = User(
-                    vk_id=str(user_data.get('id', '')),
-                    email=email,
-                    first_name=user_data.get('first_name', ''),
-                    last_name=user_data.get('last_name', ''),
-                    has_vk_account=True,  # type: ignore[assignment]
-                )
-                db.add(user)
-        # Обновляем VK access_token и refresh_token
-        user.vk_access_token = token_data['access_token']
-        user.vk_refresh_token = token_data.get('refresh_token', '')
-        if user_data.get('first_name'):
-            user.first_name = user_data['first_name']
-        if user_data.get('last_name'):
-            user.last_name = user_data['last_name']
+        # Сохраняем VK access_token и refresh_token в профиль текущего пользователя
+        current_user.vk_access_token = token_data['access_token']
+        current_user.vk_refresh_token = token_data.get('refresh_token', '')
         db.commit()
-        db.refresh(user)
-        access_token = create_access_token(data={"sub": str(user.id)})
+        db.refresh(current_user)
+        setattr(current_user, 'has_vk_account', bool(current_user.vk_access_token))
+        db.commit()
+        db.refresh(current_user)
+        access_token = create_access_token(data={"sub": str(current_user.id)})
         return {
             "access_token": access_token,
             "token_type": "bearer",
             "user": {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "has_vk_account": user.has_vk_account,
-                "has_google_account": getattr(user, 'has_google_account', False),
-                "has_google_sheet": bool(getattr(user, 'google_sheet_id', None))
+                "id": current_user.id,
+                "email": current_user.email,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "has_vk_account": current_user.has_vk_account,
+                "has_google_account": getattr(current_user, 'has_google_account', False),
+                "has_google_sheet": bool(getattr(current_user, 'google_sheet_id', None))
             },
-            "vk_source": source
+            "vk_source": result.get('source', 'vk_oauth')
         }
     except Exception as e:
         logger.error(f"VK ID callback error: {e}\n{traceback.format_exc()}")
@@ -490,3 +464,25 @@ def get_vk_user_info(access_token: str) -> dict:
         if hasattr(e, 'response') and e.response:
             logger.error(f"Response text: {e.response.text}")
         raise
+
+@router.post("/vk/unlink")
+async def unlink_vk_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Отвязка VK: очищает токены и флаг VK в профиле пользователя.
+    """
+    setattr(current_user, 'vk_access_token', '')
+    setattr(current_user, 'vk_refresh_token', '')
+    db.commit()
+    db.refresh(current_user)
+    return {"message": "VK аккаунт отвязан", "has_vk_account": False}
+
+@router.post("/google/unlink")
+async def unlink_google_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Отвязка Google: очищает токены и флаг Google в профиле пользователя.
+    """
+    setattr(current_user, 'google_access_token', '')
+    setattr(current_user, 'google_refresh_token', '')
+    db.commit()
+    db.refresh(current_user)
+    return {"message": "Google аккаунт отвязан", "has_google_account": False}
