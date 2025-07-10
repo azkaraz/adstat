@@ -25,7 +25,13 @@ logger = logging.getLogger(__name__)
 class HTTPBearer401(HTTPBearer):
     async def __call__(self, request: Request) -> HTTPAuthorizationCredentials:
         try:
-            return await super().__call__(request)
+            result = await super().__call__(request)
+            if result is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Не авторизован"
+                )
+            return result
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -132,8 +138,8 @@ async def google_auth_callback(
         code = data.code
         tokens = exchange_code_for_tokens(code)
         # Сохраняем токены для пользователя
-        current_user.google_access_token = tokens['access_token']
-        current_user.google_refresh_token = tokens['refresh_token']
+        current_user.google_access_token = tokens['access_token']  # type: ignore[assignment]
+        current_user.google_refresh_token = tokens['refresh_token']  # type: ignore[assignment]
         db.commit()
         # Создаём новый access_token для пользователя
         access_token = create_access_token(data={"sub": str(current_user.id)})
@@ -248,32 +254,59 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         token_data = result['token_data']
         source = result.get('source', 'vk_oauth')
         
-        # Находим или создаем пользователя
+        # Находим пользователя по VK ID
         user = db.query(User).filter(User.vk_id == str(user_data.get('id', ''))).first()
         
         if not user:
-            # Создаем нового пользователя с VK ID
-            user = User(
-                vk_id=str(user_data.get('id', '')),
-                email=user_data.get('email', ''),
-                first_name=user_data.get('first_name', ''),
-                last_name=user_data.get('last_name', ''),
-                has_vk_account=True
-            )
-            db.add(user)
+            # Если не найден по VK ID, ищем по email
+            email = user_data.get('email', '')
+            if email:
+                user = db.query(User).filter(User.email == email).first()
+                if user:
+                    # Связываем VK ID и токены с существующим пользователем
+                    user.vk_id = str(user_data.get('id', ''))  # type: ignore[assignment]
+                    user.has_vk_account = True  # type: ignore[assignment]
+                    user.vk_access_token = token_data['access_token']
+                    user.vk_refresh_token = token_data.get('refresh_token', '')
+                    if user_data.get('first_name'):
+                        user.first_name = user_data['first_name']
+                    if user_data.get('last_name'):
+                        user.last_name = user_data['last_name']
+                else:
+                    # Создаём нового пользователя с VK ID
+                    user = User(
+                        vk_id=str(user_data.get('id', '')),
+                        email=email,
+                        first_name=user_data.get('first_name', ''),
+                        last_name=user_data.get('last_name', ''),
+                        has_vk_account=True,  # type: ignore[assignment]
+                        vk_access_token=token_data['access_token'],
+                        vk_refresh_token=token_data.get('refresh_token', '')
+                    )
+                    db.add(user)
+            else:
+                # Нет email — создаём нового пользователя только по VK ID
+                user = User(
+                    vk_id=str(user_data.get('id', '')),
+                    email=email,
+                    first_name=user_data.get('first_name', ''),
+                    last_name=user_data.get('last_name', ''),
+                    has_vk_account=True,  # type: ignore[assignment]
+                    vk_access_token=token_data['access_token'],
+                    vk_refresh_token=token_data.get('refresh_token', '')
+                )
+                db.add(user)
         else:
-            # Обновляем существующего пользователя
-            user.has_vk_account = True
+            # Обновляем существующего пользователя по VK ID
+            user.has_vk_account = True  # type: ignore[assignment]
             if user_data.get('email'):
                 user.email = user_data['email']
             if user_data.get('first_name'):
                 user.first_name = user_data['first_name']
             if user_data.get('last_name'):
                 user.last_name = user_data['last_name']
-        
-        # Сохраняем токены
-        user.vk_access_token = token_data['access_token']
-        user.vk_refresh_token = token_data.get('refresh_token', '')
+            user.vk_access_token = token_data['access_token']
+            user.vk_refresh_token = token_data.get('refresh_token', '')
         
         db.commit()
         db.refresh(user)
