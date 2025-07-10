@@ -216,10 +216,9 @@ async def vk_auth_callback(
         )
 
 @router.post("/vk-callback")
-async def vk_callback(request: Request, db: Session = Depends(get_db)):
+async def vk_callback(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """
-    Обработка callback от VK ID OAuth 2.1
-    Обмен кода авторизации на токены
+    Привязка VK-аккаунта к текущему пользователю (авторизация через Telegram обязательна)
     """
     try:
         body = await request.json()
@@ -230,13 +229,11 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
         
         if error:
             raise HTTPException(status_code=400, detail=f"VK authorization error: {error}")
-        
         if not code:
             raise HTTPException(status_code=400, detail="Код авторизации не предоставлен")
-        
-        # Используем новую функцию для обработки callback
+        if current_user is None or current_user.telegram_id is None:
+            raise HTTPException(status_code=401, detail="Авторизация через Telegram обязательна для привязки VK")
         from app.services.vk_ads import handle_vk_id_callback
-        
         callback_params = {
             'code': code,
             'error': error,
@@ -244,91 +241,38 @@ async def vk_callback(request: Request, db: Session = Depends(get_db)):
             'device_id': device_id,
             'code_verifier': code_verifier
         }
-        
         result = handle_vk_id_callback(callback_params)
-        
         if not result.get('success'):
             raise HTTPException(status_code=400, detail=result)
-        
         user_data = result['user']
         token_data = result['token_data']
         source = result.get('source', 'vk_oauth')
-        
-        # Находим пользователя по VK ID
-        user = db.query(User).filter(User.vk_id == str(user_data.get('id', ''))).first()
-        
-        if not user:
-            # Если не найден по VK ID, ищем по email
-            email = user_data.get('email', '')
-            if email:
-                user = db.query(User).filter(User.email == email).first()
-                if user:
-                    # Связываем VK ID и токены с существующим пользователем
-                    user.vk_id = str(user_data.get('id', ''))  # type: ignore[assignment]
-                    user.has_vk_account = True  # type: ignore[assignment]
-                    user.vk_access_token = token_data['access_token']
-                    user.vk_refresh_token = token_data.get('refresh_token', '')
-                    if user_data.get('first_name'):
-                        user.first_name = user_data['first_name']
-                    if user_data.get('last_name'):
-                        user.last_name = user_data['last_name']
-                else:
-                    # Создаём нового пользователя с VK ID
-                    user = User(
-                        vk_id=str(user_data.get('id', '')),
-                        email=email,
-                        first_name=user_data.get('first_name', ''),
-                        last_name=user_data.get('last_name', ''),
-                        has_vk_account=True,  # type: ignore[assignment]
-                        vk_access_token=token_data['access_token'],
-                        vk_refresh_token=token_data.get('refresh_token', '')
-                    )
-                    db.add(user)
-            else:
-                # Нет email — создаём нового пользователя только по VK ID
-                user = User(
-                    vk_id=str(user_data.get('id', '')),
-                    email=email,
-                    first_name=user_data.get('first_name', ''),
-                    last_name=user_data.get('last_name', ''),
-                    has_vk_account=True,  # type: ignore[assignment]
-                    vk_access_token=token_data['access_token'],
-                    vk_refresh_token=token_data.get('refresh_token', '')
-                )
-                db.add(user)
-        else:
-            # Обновляем существующего пользователя по VK ID
-            user.has_vk_account = True  # type: ignore[assignment]
-            if user_data.get('email'):
-                user.email = user_data['email']
-            if user_data.get('first_name'):
-                user.first_name = user_data['first_name']
-            if user_data.get('last_name'):
-                user.last_name = user_data['last_name']
-            user.vk_access_token = token_data['access_token']
-            user.vk_refresh_token = token_data.get('refresh_token', '')
-        
+        # Привязываем VK ID и токены к текущему пользователю
+        current_user.vk_id = str(user_data.get('id', ''))  # type: ignore[assignment]
+        current_user.has_vk_account = True  # type: ignore[assignment]
+        current_user.vk_access_token = token_data['access_token']
+        current_user.vk_refresh_token = token_data.get('refresh_token', '')
+        if user_data.get('first_name'):
+            current_user.first_name = user_data['first_name']
+        if user_data.get('last_name'):
+            current_user.last_name = user_data['last_name']
         db.commit()
-        db.refresh(user)
-        
-        # Генерируем JWT токен
-        access_token = create_access_token(data={"sub": str(user.id)})
-        
+        db.refresh(current_user)
+        access_token = create_access_token(data={"sub": str(current_user.id)})
         return {
             "access_token": access_token,
             "token_type": "bearer",
             "user": {
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "has_vk_account": user.has_vk_account,
-                "has_google_account": getattr(user, 'has_google_account', False),
-                "has_google_sheet": bool(getattr(user, 'google_sheet_id', None))
+                "id": current_user.id,
+                "email": current_user.email,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "has_vk_account": current_user.has_vk_account,
+                "has_google_account": getattr(current_user, 'has_google_account', False),
+                "has_google_sheet": bool(getattr(current_user, 'google_sheet_id', None))
             },
             "vk_source": source
         }
-        
     except Exception as e:
         logger.error(f"VK ID callback error: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Ошибка обработки VK ID callback: {e}\n{traceback.format_exc()}")
