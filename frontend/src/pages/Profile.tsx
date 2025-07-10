@@ -126,6 +126,24 @@ const Profile: React.FC = () => {
     }
   }
 
+  const handleUnlinkVk = async () => {
+    setLoading(true)
+    setMessage('')
+    try {
+      const res = await authService.unlinkVkAccount()
+      setMessage(res.message || 'VK-аккаунт успешно отвязан')
+      window.location.reload()
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.detail) {
+        setMessage(`Ошибка: ${error.response.data.detail}`)
+      } else {
+        setMessage(`Ошибка: ${error.message || error}`)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // --- VK ID PKCE генерация ---
   function generateRandomString(length: number) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_' // VK рекомендует a-z, A-Z, 0-9, _, -
@@ -324,6 +342,15 @@ const Profile: React.FC = () => {
                 className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Привязать ВК
+              </button>
+            )}
+            {vkLinked && (
+              <button
+                onClick={handleUnlinkVk}
+                disabled={loading}
+                className="mt-4 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md disabled:opacity-50"
+              >
+                {loading ? 'Отвязка...' : 'Отвязать ВК'}
               </button>
             )}
           </div>

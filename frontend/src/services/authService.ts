@@ -274,6 +274,11 @@ export const authService = {
       localStorage.setItem('token', response.data.access_token)
     }
     return response.data
+  },
+
+  async unlinkVkAccount(): Promise<{ message: string; has_vk_account: boolean }> {
+    const response = await api.post('/api/auth/vk/unlink')
+    return response.data
   }
 }
 
