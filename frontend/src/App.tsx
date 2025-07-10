@@ -244,28 +244,31 @@ const TelegramAuthInitializer = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <TelegramAuthInitializer />
-      <Router basename={basename}>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <main className="container mx-auto px-4 py-8">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/upload" element={<Upload />} />
-              <Route path="/test" element={<TestAuth />} />
-              <Route path="/test-telegram-web-app" element={<TestTelegramWebApp />} />
-              <Route path="/google-oauth-callback" element={<GoogleOAuthCallback />} />
-              <Route path="/vk-oauth-callback" element={<VKOAuthCallback />} />
-              <Route path="/vk-campaigns" element={<VKCampaigns />} />
-            </Routes>
-          </main>
-          <DebugInfo />
-        </div>
-      </Router>
-    </AuthProvider>
+    <>
+      <div style={{position: 'fixed', top: 0, left: 0, background: 'yellow', zIndex: 9999, padding: 4}}>TEST BUILD</div>
+      <AuthProvider>
+        <TelegramAuthInitializer />
+        <Router basename={basename}>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <main className="container mx-auto px-4 py-8">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/upload" element={<Upload />} />
+                <Route path="/test" element={<TestAuth />} />
+                <Route path="/test-telegram-web-app" element={<TestTelegramWebApp />} />
+                <Route path="/google-oauth-callback" element={<GoogleOAuthCallback />} />
+                <Route path="/vk-oauth-callback" element={<VKOAuthCallback />} />
+                <Route path="/vk-campaigns" element={<VKCampaigns />} />
+              </Routes>
+            </main>
+            <DebugInfo />
+          </div>
+        </Router>
+      </AuthProvider>
+    </>
   )
 }
 
